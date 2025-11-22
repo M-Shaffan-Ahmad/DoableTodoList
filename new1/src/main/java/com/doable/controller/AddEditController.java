@@ -22,7 +22,6 @@ public class AddEditController {
     @FXML private Spinner<Integer> hourSpinner;
     @FXML private Spinner<Integer> minuteSpinner;
     @FXML private ComboBox<String> ampmCombo;
-    @FXML private ChoiceBox<String> repeatChoice;
     @FXML private ToggleButton repeatDaily;
     @FXML private ToggleButton repeatWeekly;
     @FXML private ToggleButton repeatMonthly;
@@ -56,6 +55,37 @@ public class AddEditController {
         minuteSpinner.setValueFactory(minuteFactory);
         minuteSpinner.setEditable(true);
         
+        // Add text formatter to ensure proper input handling for spinners
+        hourSpinner.getEditor().setTextFormatter(new javafx.scene.control.TextFormatter<>(new javafx.util.converter.IntegerStringConverter(), 12, change -> {
+            if (change.getControlNewText().isEmpty()) {
+                return change;
+            }
+            try {
+                int val = Integer.parseInt(change.getControlNewText());
+                if (val >= 1 && val <= 12) {
+                    return change;
+                }
+            } catch (NumberFormatException e) {
+                // ignore
+            }
+            return null;
+        }));
+        
+        minuteSpinner.getEditor().setTextFormatter(new javafx.scene.control.TextFormatter<>(new javafx.util.converter.IntegerStringConverter(), 0, change -> {
+            if (change.getControlNewText().isEmpty()) {
+                return change;
+            }
+            try {
+                int val = Integer.parseInt(change.getControlNewText());
+                if (val >= 0 && val <= 59) {
+                    return change;
+                }
+            } catch (NumberFormatException e) {
+                // ignore
+            }
+            return null;
+        }));
+        
         // Setup AM/PM combo
         ampmCombo.setItems(FXCollections.observableArrayList("AM", "PM"));
         ampmCombo.setValue("AM");
@@ -72,7 +102,6 @@ public class AddEditController {
                 noRepeatLabel.setVisible(false);
                 daysSection.setVisible(false);
                 daysSection.setManaged(false);
-                repeatChoice.setValue("DAILY");
             }
         });
 
@@ -81,7 +110,6 @@ public class AddEditController {
                 noRepeatLabel.setVisible(false);
                 daysSection.setVisible(true);
                 daysSection.setManaged(true);
-                repeatChoice.setValue("WEEKLY");
             }
         });
 
@@ -90,7 +118,6 @@ public class AddEditController {
                 noRepeatLabel.setVisible(false);
                 daysSection.setVisible(false);
                 daysSection.setManaged(false);
-                repeatChoice.setValue("MONTHLY");
             }
         });
 
@@ -99,7 +126,6 @@ public class AddEditController {
                 noRepeatLabel.setVisible(false);
                 daysSection.setVisible(true);
                 daysSection.setManaged(true);
-                repeatChoice.setValue("CUSTOM");
             }
         });
 
@@ -145,8 +171,9 @@ public class AddEditController {
             if (minuteSpinner.getValueFactory() != null) {
                 minuteSpinner.getValueFactory().setValue(minute);
             }
-            if (ampmCombo.getValue() == null) {
-                ampmCombo.setValue("AM");
+            // Ensure AM/PM combo has items before setting value
+            if (ampmCombo.getItems().isEmpty()) {
+                ampmCombo.setItems(FXCollections.observableArrayList("AM", "PM"));
             }
             ampmCombo.setValue(ampm);
         } else {
@@ -156,6 +183,10 @@ public class AddEditController {
             }
             if (minuteSpinner.getValueFactory() != null) {
                 minuteSpinner.getValueFactory().setValue(0);
+            }
+            // Ensure AM/PM combo has items before setting value
+            if (ampmCombo.getItems().isEmpty()) {
+                ampmCombo.setItems(FXCollections.observableArrayList("AM", "PM"));
             }
             if (ampmCombo.getValue() == null) {
                 ampmCombo.setValue("AM");
@@ -169,7 +200,6 @@ public class AddEditController {
             repeatCustom.setSelected(true);
             daysSection.setVisible(true);
             daysSection.setManaged(true);
-            repeatChoice.setValue("CUSTOM");
             
             // Parse custom days
             String[] parts = repeatRule.split("_");
@@ -202,8 +232,6 @@ public class AddEditController {
                 }
             }
         } else {
-            repeatChoice.setValue(repeatRule);
-            
             // Set repeat buttons based on rule
             switch (repeatRule) {
                 case "DAILY":
@@ -234,8 +262,14 @@ public class AddEditController {
     }
 
     private String buildRepeatRule() {
-        String choice = repeatChoice.getValue();
-        if ("CUSTOM".equals(choice)) {
+        // Determine which repeat option is selected
+        if (repeatDaily.isSelected()) {
+            return "DAILY";
+        } else if (repeatWeekly.isSelected()) {
+            return "WEEKLY";
+        } else if (repeatMonthly.isSelected()) {
+            return "MONTHLY";
+        } else if (repeatCustom.isSelected()) {
             // Build custom repeat rule from selected days
             StringBuilder days = new StringBuilder();
             if (dayMonday.isSelected()) days.append("MON,");
@@ -257,7 +291,7 @@ public class AddEditController {
             System.out.println("Custom repeat rule: CUSTOM_" + daysList);
             return "CUSTOM_" + daysList;
         }
-        return choice != null ? choice : "NONE";
+        return "NONE";
     }
 
     @FXML
@@ -313,6 +347,11 @@ public class AddEditController {
 
     @FXML
     private void onSave() {
+        // Ensure task object exists
+        if (task == null) {
+            task = new Task();
+        }
+        
         String title = titleField.getText();
         if (title == null || title.trim().isEmpty()) {
             Alert a = new Alert(Alert.AlertType.WARNING, "Title is required");
@@ -387,7 +426,19 @@ public class AddEditController {
             }
         } else {
             // If no date but time is set, use today's date
-            task.setDueDate(LocalDateTime.of(LocalDate.now(), LocalTime.of(9, 0)));
+            try {
+                int hour24 = hour;
+                if ("PM".equals(ampm) && hour != 12) {
+                    hour24 = hour + 12;
+                } else if ("AM".equals(ampm) && hour == 12) {
+                    hour24 = 0;
+                }
+                task.setDueDate(LocalDateTime.of(LocalDate.now(), LocalTime.of(hour24, minute)));
+            } catch (Exception ex) {
+                Alert a = new Alert(Alert.AlertType.WARNING, "Error setting due date: " + ex.getMessage());
+                a.showAndWait();
+                return;
+            }
         }
 
         task.setRepeatRule(buildRepeatRule());

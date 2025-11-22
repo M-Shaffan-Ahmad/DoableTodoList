@@ -29,13 +29,13 @@
                     <Label text="Due Date" style="-fx-font-size: 11; -fx-text-fill: #6b7280;" />
                     <DatePicker fx:id="datePicker" style="-fx-padding: 8; -fx-font-size: 12; -fx-border-color: #e5e7eb; -fx-border-radius: 5;" />
                 </VBox>
-                <VBox spacing="6" prefWidth="220">
+                <VBox spacing="6" prefWidth="250">
                     <Label text="Time" style="-fx-font-size: 11; -fx-text-fill: #6b7280;" />
                     <HBox spacing="8" alignment="CENTER_LEFT">
-                        <Spinner fx:id="hourSpinner" prefWidth="110" style="-fx-font-size: 12; -fx-padding: 6;" />
+                        <Spinner fx:id="hourSpinner" prefWidth="130" style="-fx-font-size: 12; -fx-padding: 6;" />
                         <Label text=":" style="-fx-font-size: 16; -fx-font-weight: bold;" />
-                        <Spinner fx:id="minuteSpinner" prefWidth="110" style="-fx-font-size: 12; -fx-padding: 6;" />
-                        <ComboBox fx:id="ampmCombo" prefWidth="90" style="-fx-font-size: 12; -fx-padding: 6;" />
+                        <Spinner fx:id="minuteSpinner" prefWidth="130" style="-fx-font-size: 12; -fx-padding: 6;" />
+                        <ComboBox fx:id="ampmCombo" prefWidth="130" style="-fx-font-size: 12; -fx-padding: 6;" />
                     </HBox>
                 </VBox>
             </HBox>
@@ -51,7 +51,6 @@
                 <ToggleButton text="Custom" style="-fx-padding: 8 12; -fx-font-size: 11; -fx-border-radius: 4;" fx:id="repeatCustom" />
             </HBox>
             <Label text="No repeat" style="-fx-font-size: 11; -fx-text-fill: #9ca3af;" fx:id="noRepeatLabel" />
-            <ChoiceBox fx:id="repeatChoice" style="-fx-font-size: 11; -fx-padding: 8;" />
         </VBox>
 
         <!-- Days Selection for Weekly -->
