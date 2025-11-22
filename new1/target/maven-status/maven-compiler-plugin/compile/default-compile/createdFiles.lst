@@ -8,4 +8,5 @@ com\doable\model\Category.class
 com\doable\dao\CategoryDao.class
 com\doable\controller\SettingsController.class
 com\doable\db\Database.class
+com\doable\controller\SettingsController$1.class
 com\doable\dao\TaskDao.class

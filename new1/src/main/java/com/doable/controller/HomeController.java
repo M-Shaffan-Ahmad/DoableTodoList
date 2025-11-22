@@ -131,14 +131,29 @@ public class HomeController {
     private void applyFilters() {
         String statusFilter = filterChoice.getValue();
         Category selectedCategory = categoryFilter.getValue();
+        LocalDateTime now = LocalDateTime.now();
         
         List<Task> filtered = allTasks.stream()
             .filter(t -> {
                 // Apply status filter
                 if ("Pending".equals(statusFilter)) {
-                    return !t.isCompleted();
+                    // Pending: not completed AND due date hasn't passed yet
+                    if (t.isCompleted()) {
+                        return false; // Already completed by user or system
+                    }
+                    if (t.getDueDate() != null && t.getDueDate().isBefore(now)) {
+                        return false; // Due date has passed
+                    }
+                    return true; // Not completed and future due date
                 } else if ("Completed".equals(statusFilter)) {
-                    return t.isCompleted();
+                    // Completed: either marked as completed by user OR due date has passed
+                    if (t.isCompleted()) {
+                        return true; // User marked as completed
+                    }
+                    if (t.getDueDate() != null && t.getDueDate().isBefore(now)) {
+                        return true; // Due date has passed
+                    }
+                    return false; // Still pending
                 }
                 return true; // "All" - include all tasks
             })
@@ -181,13 +196,29 @@ public class HomeController {
             ctrl.setStage(s);
             s.showAndWait();
 
-            loadTasks(); // Refresh in case any data was imported
+            // Refresh tasks and categories when settings window closes
+            loadTasks();
+            loadCategories();
         } catch (IOException e) {
             e.printStackTrace();
+            System.err.println("IOException loading settings: " + e.getMessage());
+            Throwable cause = e.getCause();
+            while (cause != null) {
+                System.err.println("Caused by: " + cause.getClass().getName() + ": " + cause.getMessage());
+                cause = cause.getCause();
+            }
             Alert alert = new Alert(Alert.AlertType.ERROR);
             alert.setTitle("Error");
             alert.setHeaderText("Failed to open settings");
-            alert.setContentText(e.getMessage());
+            alert.setContentText(e.getMessage() + (e.getCause() != null ? "\n" + e.getCause().getMessage() : ""));
+            alert.showAndWait();
+        } catch (Exception e) {
+            e.printStackTrace();
+            System.err.println("Exception loading settings: " + e.getClass().getName() + ": " + e.getMessage());
+            Alert alert = new Alert(Alert.AlertType.ERROR);
+            alert.setTitle("Error");
+            alert.setHeaderText("Failed to open settings");
+            alert.setContentText(e.getClass().getName() + ": " + e.getMessage());
             alert.showAndWait();
         }
     }
@@ -252,16 +283,18 @@ public class HomeController {
 
     private void handleTaskCheckboxToggle(Task task) {
         try {
-            // Toggle the marked for completion state
-            task.setMarkedForCompletion(!task.isMarkedForCompletion());
+            boolean isCurrentlyMarked = task.isMarkedForCompletion();
             
-            if (task.isMarkedForCompletion()) {
-                // Task is marked for completion - suppress reminders
-                // No changes to due date needed, just update the flag
+            if (!isCurrentlyMarked) {
+                // Task is being marked - set as completed
+                task.setMarkedForCompletion(true);
+                task.setCompleted(true);
                 taskDao.save(task);
             } else {
-                // Task is unmarked - renew it based on repeat rule
+                // Task is being unmarked - renew it based on repeat rule
+                task.setMarkedForCompletion(false);
                 renewTask(task);
+                task.setCompleted(false);
                 taskDao.save(task);
             }
             
@@ -383,6 +416,17 @@ public class HomeController {
                         if (!t.isCompleted() && !t.isMarkedForCompletion() && t.getDueDate() != null) {
                             long diffMs = Duration.between(now, t.getDueDate()).toMillis();
                             long taskId = t.getId();
+                            
+                            // Auto-complete task if reminder time has passed
+                            if (diffMs < 0) {
+                                t.setCompleted(true);
+                                try {
+                                    taskDao.save(t);
+                                    System.out.println("Auto-completed task: " + t.getTitle());
+                                } catch (SQLException e) {
+                                    System.err.println("Error auto-completing task: " + e.getMessage());
+                                }
+                            }
                             
                             // Notification at EXACT TIME (-2000 to 2000 ms, only once)
                             if (diffMs >= -2000 && diffMs <= 2000 && !notifiedAtExactTimeIds.contains(taskId)) {

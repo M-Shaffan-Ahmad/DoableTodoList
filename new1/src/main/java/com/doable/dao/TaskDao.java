@@ -93,4 +93,31 @@ public class TaskDao {
         }
         return list;
     }
+
+    public boolean isTitleExists(String title, long excludeTaskId) throws SQLException {
+        String sql = "SELECT COUNT(*) FROM tasks WHERE title = ? AND id != ?";
+        try (PreparedStatement ps = conn.prepareStatement(sql)) {
+            ps.setString(1, title);
+            ps.setLong(2, excludeTaskId);
+            try (ResultSet rs = ps.executeQuery()) {
+                if (rs.next()) {
+                    return rs.getInt(1) > 0;
+                }
+            }
+        }
+        return false;
+    }
+
+    public boolean isTitleExists(String title) throws SQLException {
+        String sql = "SELECT COUNT(*) FROM tasks WHERE title = ?";
+        try (PreparedStatement ps = conn.prepareStatement(sql)) {
+            ps.setString(1, title);
+            try (ResultSet rs = ps.executeQuery()) {
+                if (rs.next()) {
+                    return rs.getInt(1) > 0;
+                }
+            }
+        }
+        return false;
+    }
 }

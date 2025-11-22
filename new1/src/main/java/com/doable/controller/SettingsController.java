@@ -1,12 +1,17 @@
 package com.doable.controller;
 
 import com.doable.dao.TaskDao;
+import com.doable.dao.CategoryDao;
 import com.doable.model.Task;
+import com.doable.model.Category;
 import javafx.collections.FXCollections;
 import javafx.fxml.FXML;
 import javafx.scene.control.Alert;
 import javafx.scene.control.ComboBox;
 import javafx.scene.control.Label;
+import javafx.scene.control.ListView;
+import javafx.scene.control.ListCell;
+import javafx.scene.control.TextInputDialog;
 import javafx.stage.FileChooser;
 import javafx.stage.Stage;
 
@@ -17,6 +22,7 @@ import java.sql.SQLException;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.List;
+import java.util.Optional;
 import java.util.prefs.Preferences;
 
 public class SettingsController {
@@ -25,8 +31,11 @@ public class SettingsController {
     @FXML private Label importStatus;
     @FXML private Label customRingtoneLabel;
     @FXML private Label customRingtoneStatus;
+    @FXML private ListView<Category> categoriesList;
+    @FXML private Label categoriesStatus;
 
     private final TaskDao taskDao = new TaskDao();
+    private final CategoryDao categoryDao = new CategoryDao();
     private final Preferences prefs = Preferences.userNodeForPackage(SettingsController.class);
     private Stage stage;
     private String customRingtoneFile = null;
@@ -54,6 +63,32 @@ public class SettingsController {
                 customRingtoneStatus.setText("(Previous file not found)");
             }
         }
+        
+        // Load categories
+        loadCategories();
+    }
+    
+    private void loadCategories() {
+        try {
+            categoriesList.setItems(FXCollections.observableArrayList(categoryDao.findAll()));
+            categoriesList.setCellFactory(lv -> new ListCell<Category>() {
+                @Override
+                protected void updateItem(Category item, boolean empty) {
+                    super.updateItem(item, empty);
+                    if (empty || item == null) {
+                        setText(null);
+                        setStyle(null);
+                    } else {
+                        setText(item.getName());
+                        setStyle("-fx-text-fill: black;");
+                    }
+                }
+            });
+            categoriesStatus.setText("Categories loaded: " + categoriesList.getItems().size());
+        } catch (SQLException e) {
+            e.printStackTrace();
+            categoriesStatus.setText("Error loading categories: " + e.getMessage());
+        }
     }
 
     public void setStage(Stage stage) {
@@ -67,6 +102,111 @@ public class SettingsController {
             return;
         }
         playRingtone(selected);
+    }
+    
+    @FXML
+    private void onNewCategorySettings() {
+        TextInputDialog dialog = new TextInputDialog();
+        dialog.setTitle("Create New Category");
+        dialog.setHeaderText("Enter category name:");
+        dialog.setContentText("Category name:");
+        
+        Optional<String> result = dialog.showAndWait();
+        if (result.isPresent() && !result.get().trim().isEmpty()) {
+            String categoryName = result.get().trim();
+            try {
+                // Check if category already exists
+                for (Category cat : categoriesList.getItems()) {
+                    if (cat.getName().equalsIgnoreCase(categoryName)) {
+                        Alert a = new Alert(Alert.AlertType.WARNING, "Category already exists!");
+                        a.showAndWait();
+                        return;
+                    }
+                }
+                
+                // Create new category with default color
+                Category newCat = new Category(categoryName, "#3b82f6");
+                categoryDao.save(newCat);
+                loadCategories();
+                
+                Alert a = new Alert(Alert.AlertType.INFORMATION, "Category '" + categoryName + "' created successfully!");
+                a.showAndWait();
+            } catch (SQLException e) {
+                e.printStackTrace();
+                Alert a = new Alert(Alert.AlertType.ERROR, "Error creating category: " + e.getMessage());
+                a.showAndWait();
+            }
+        }
+    }
+    
+    @FXML
+    private void onEditCategory() {
+        Category selected = categoriesList.getSelectionModel().getSelectedItem();
+        if (selected == null) {
+            Alert a = new Alert(Alert.AlertType.WARNING, "Please select a category to edit");
+            a.showAndWait();
+            return;
+        }
+        
+        TextInputDialog dialog = new TextInputDialog(selected.getName());
+        dialog.setTitle("Edit Category");
+        dialog.setHeaderText("Edit category name:");
+        dialog.setContentText("Category name:");
+        
+        Optional<String> result = dialog.showAndWait();
+        if (result.isPresent() && !result.get().trim().isEmpty()) {
+            String newName = result.get().trim();
+            try {
+                // Check if new name already exists (but allow keeping same name)
+                for (Category cat : categoriesList.getItems()) {
+                    if (cat.getId() != selected.getId() && cat.getName().equalsIgnoreCase(newName)) {
+                        Alert a = new Alert(Alert.AlertType.WARNING, "Category name already exists!");
+                        a.showAndWait();
+                        return;
+                    }
+                }
+                
+                selected.setName(newName);
+                categoryDao.save(selected);
+                loadCategories();
+                
+                Alert a = new Alert(Alert.AlertType.INFORMATION, "Category updated successfully!");
+                a.showAndWait();
+            } catch (SQLException e) {
+                e.printStackTrace();
+                Alert a = new Alert(Alert.AlertType.ERROR, "Error updating category: " + e.getMessage());
+                a.showAndWait();
+            }
+        }
+    }
+    
+    @FXML
+    private void onDeleteCategory() {
+        Category selected = categoriesList.getSelectionModel().getSelectedItem();
+        if (selected == null) {
+            Alert a = new Alert(Alert.AlertType.WARNING, "Please select a category to delete");
+            a.showAndWait();
+            return;
+        }
+        
+        Alert confirm = new Alert(Alert.AlertType.CONFIRMATION, 
+            "Delete category '" + selected.getName() + "'? Tasks will not be deleted but will be unassigned.");
+        confirm.setTitle("Confirm Delete");
+        Optional<javafx.scene.control.ButtonType> response = confirm.showAndWait();
+        
+        if (response.isPresent() && response.get() == javafx.scene.control.ButtonType.OK) {
+            try {
+                categoryDao.delete(selected.getId());
+                loadCategories();
+                
+                Alert a = new Alert(Alert.AlertType.INFORMATION, "Category deleted successfully!");
+                a.showAndWait();
+            } catch (SQLException e) {
+                e.printStackTrace();
+                Alert a = new Alert(Alert.AlertType.ERROR, "Error deleting category: " + e.getMessage());
+                a.showAndWait();
+            }
+        }
     }
     
     @FXML
@@ -334,6 +474,18 @@ public class SettingsController {
                 // Extract title
                 String title = extractJsValue(block, "title:");
                 if (title.isEmpty()) continue;
+                
+                // Check if title exists and auto-rename if needed
+                if (taskDao.isTitleExists(title)) {
+                    String originalTitle = title;
+                    int copyCount = 1;
+                    while (taskDao.isTitleExists(title)) {
+                        title = originalTitle + " (copy " + copyCount + ")";
+                        copyCount++;
+                    }
+                    System.out.println("Renamed duplicate import: '" + originalTitle + "' -> '" + title + "'");
+                }
+                
                 task.setTitle(title);
 
                 // Extract description

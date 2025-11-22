@@ -1,4 +1,5 @@
 # Build script for creating Windows installer for Doable Todo List
+# This script uses jpackage (bundled with JDK 16+)
 
 Write-Host ""
 Write-Host "======================================"
@@ -15,13 +16,17 @@ if (-not $jpackage) {
     Write-Host ""
     Write-Host "jpackage requires JDK 16 or later with jpackage support."
     Write-Host ""
-    Write-Host "Download from: https://adoptium.net/"
+    Write-Host "Download options:"
+    Write-Host "  1. Oracle JDK: https://www.oracle.com/java/technologies/downloads/"
+    Write-Host "  2. Eclipse Temurin: https://adoptium.net/"
+    Write-Host "  3. Microsoft Build of OpenJDK: https://www.microsoft.com/openjdk"
     Write-Host ""
+    Write-Host "Make sure the JDK bin folder is in your PATH."
     Read-Host "Press Enter to exit"
     exit 1
 }
 
-Write-Host "OK - jpackage found" -ForegroundColor Green
+Write-Host "✓ jpackage found at: $($jpackage.Source)" -ForegroundColor Green
 Write-Host ""
 
 # Step 2: Build JAR
@@ -34,36 +39,56 @@ if ($LASTEXITCODE -ne 0) {
     exit 1
 }
 
-Write-Host "OK - JAR file created" -ForegroundColor Green
+Write-Host "✓ JAR file created" -ForegroundColor Green
 Write-Host ""
 
 # Step 3: Create Windows installer
 Write-Host "[3/3] Creating Windows installer..."
 Write-Host ""
 
-# Create dist directory
+# Create dist directory if it doesn't exist
 if (-not (Test-Path "target\dist")) {
     New-Item -ItemType Directory -Path "target\dist" -Force | Out-Null
 }
 
 # Run jpackage
-jpackage --input target --dest target\dist --name Doable --main-jar doable-todo-1.0-SNAPSHOT-shaded.jar --main-class com.doable.MainApp --type exe --win-console $false --win-menu $true --win-shortcut $true --app-version 1.0 --vendor "Doable" --description "A simple todo list application" --icon src/main/resources/app_icon.png
+jpackage `
+    --input target `
+    --dest target\dist `
+    --name Doable `
+    --main-jar doable-todo-1.0-SNAPSHOT-shaded.jar `
+    --main-class com.doable.MainApp `
+    --type exe `
+    --win-console false `
+    --win-menu true `
+    --win-shortcut true `
+    --app-version 1.0 `
+    --vendor "Doable" `
+    --description "A simple and efficient todo list application" `
+    --icon src/main/resources/app_icon.png
 
 if ($LASTEXITCODE -eq 0) {
     Write-Host ""
     Write-Host "======================================"
-    Write-Host "  SUCCESS - Installer created!"
+    Write-Host "  ✓ Success! Installer created."
     Write-Host "======================================"
     Write-Host ""
-    Write-Host "Installer location:"
+    Write-Host "The installer file is located in:"
     Write-Host "  target\dist\Doable-1.0.exe"
     Write-Host ""
     Write-Host "Share this .exe file with your friends!"
     Write-Host ""
+    
+    # Try to open the folder
     Start-Process explorer.exe -ArgumentList "target\dist"
 } else {
     Write-Host ""
     Write-Host "ERROR: Installer creation failed!" -ForegroundColor Red
+    Write-Host ""
+    Write-Host "Troubleshooting:"
+    Write-Host "  - Ensure JDK 16+ is installed with jpackage support"
+    Write-Host "  - Check that all source files compiled successfully"
+    Write-Host "  - Try running: jpackage --help"
     Write-Host ""
 }
 

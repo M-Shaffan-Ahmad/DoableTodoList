@@ -4,6 +4,7 @@ import javafx.fxml.FXML;
 import javafx.scene.control.*;
 import javafx.scene.layout.VBox;
 import javafx.stage.Stage;
+import javafx.collections.FXCollections;
 import com.doable.dao.TaskDao;
 import com.doable.dao.CategoryDao;
 import com.doable.model.Task;
@@ -18,7 +19,9 @@ public class AddEditController {
     @FXML private TextField titleField;
     @FXML private TextArea descField;
     @FXML private DatePicker datePicker;
-    @FXML private TextField timeField;
+    @FXML private Spinner<Integer> hourSpinner;
+    @FXML private Spinner<Integer> minuteSpinner;
+    @FXML private ComboBox<String> ampmCombo;
     @FXML private ChoiceBox<String> repeatChoice;
     @FXML private ToggleButton repeatDaily;
     @FXML private ToggleButton repeatWeekly;
@@ -42,6 +45,21 @@ public class AddEditController {
     private final ToggleGroup repeatGroup = new ToggleGroup();
 
     public void initialize() {
+        // Setup hour and minute spinners with proper formatting
+        SpinnerValueFactory.IntegerSpinnerValueFactory hourFactory = new SpinnerValueFactory.IntegerSpinnerValueFactory(1, 12, 12);
+        hourFactory.setWrapAround(true);
+        hourSpinner.setValueFactory(hourFactory);
+        hourSpinner.setEditable(true);
+        
+        SpinnerValueFactory.IntegerSpinnerValueFactory minuteFactory = new SpinnerValueFactory.IntegerSpinnerValueFactory(0, 59, 0);
+        minuteFactory.setWrapAround(true);
+        minuteSpinner.setValueFactory(minuteFactory);
+        minuteSpinner.setEditable(true);
+        
+        // Setup AM/PM combo
+        ampmCombo.setItems(FXCollections.observableArrayList("AM", "PM"));
+        ampmCombo.setValue("AM");
+        
         // Setup repeat toggle group
         repeatDaily.setToggleGroup(repeatGroup);
         repeatWeekly.setToggleGroup(repeatGroup);
@@ -85,8 +103,6 @@ public class AddEditController {
             }
         });
 
-        repeatChoice.getItems().addAll("NONE", "DAILY", "WEEKLY", "MONTHLY", "CUSTOM");
-        repeatChoice.setValue("NONE");
         
         // Load categories
         loadCategories();
@@ -114,7 +130,36 @@ public class AddEditController {
         if (t.getDueDate() != null) {
             datePicker.setValue(t.getDueDate().toLocalDate());
             java.time.LocalTime lt = t.getDueDate().toLocalTime();
-            timeField.setText(String.format("%02d:%02d", lt.getHour(), lt.getMinute()));
+            int hour24 = lt.getHour();
+            int minute = lt.getMinute();
+            
+            // Convert to 12-hour format
+            String ampm = hour24 >= 12 ? "PM" : "AM";
+            int hour12 = hour24 % 12;
+            if (hour12 == 0) hour12 = 12;
+            
+            // Ensure spinner value factories are initialized before setting values
+            if (hourSpinner.getValueFactory() != null) {
+                hourSpinner.getValueFactory().setValue(hour12);
+            }
+            if (minuteSpinner.getValueFactory() != null) {
+                minuteSpinner.getValueFactory().setValue(minute);
+            }
+            if (ampmCombo.getValue() == null) {
+                ampmCombo.setValue("AM");
+            }
+            ampmCombo.setValue(ampm);
+        } else {
+            // Set default values for new tasks
+            if (hourSpinner.getValueFactory() != null) {
+                hourSpinner.getValueFactory().setValue(9);
+            }
+            if (minuteSpinner.getValueFactory() != null) {
+                minuteSpinner.getValueFactory().setValue(0);
+            }
+            if (ampmCombo.getValue() == null) {
+                ampmCombo.setValue("AM");
+            }
         }
         
         String repeatRule = t.getRepeatRule() == null ? "NONE" : t.getRepeatRule();
@@ -274,26 +319,75 @@ public class AddEditController {
             a.showAndWait();
             return;
         }
-        task.setTitle(title.trim());
-        task.setDescription(descField.getText());
-
-        LocalDate date = datePicker.getValue();
-        String time = timeField.getText();
-        if (date != null && time != null && !time.isBlank()) {
-            try {
-                String[] parts = time.split(":");
-                int h = Integer.parseInt(parts[0]);
-                int m = Integer.parseInt(parts[1]);
-                task.setDueDate(LocalDateTime.of(date, LocalTime.of(h, m)));
-            } catch (Exception ex) {
-                Alert a = new Alert(Alert.AlertType.WARNING, "Invalid time format. Use HH:MM");
+        title = title.trim();
+        
+        // Check for duplicate title
+        try {
+            if (dao.isTitleExists(title, task.getId())) {
+                Alert a = new Alert(Alert.AlertType.ERROR, "A task with the title '" + title + "' already exists. Please use a different title.");
+                a.setTitle("Duplicate Title");
+                a.setHeaderText("Cannot save task");
                 a.showAndWait();
                 return;
             }
-        } else if (date != null) {
-            task.setDueDate(LocalDateTime.of(date, LocalTime.of(9, 0)));
+        } catch (SQLException e) {
+            e.printStackTrace();
+            Alert a = new Alert(Alert.AlertType.ERROR, "Error checking for duplicate titles: " + e.getMessage());
+            a.showAndWait();
+            return;
+        }
+        
+        task.setTitle(title);
+        task.setDescription(descField.getText());
+
+        LocalDate date = datePicker.getValue();
+        Integer hour = hourSpinner.getValue();
+        Integer minute = minuteSpinner.getValue();
+        String ampm = ampmCombo.getValue();
+        
+        // Validate time inputs
+        if (hour == null || hour < 1 || hour > 12) {
+            Alert a = new Alert(Alert.AlertType.WARNING, "Hour must be between 1 and 12");
+            a.showAndWait();
+            return;
+        }
+        if (minute == null || minute < 0 || minute > 59) {
+            Alert a = new Alert(Alert.AlertType.WARNING, "Minutes must be between 0 and 59");
+            a.showAndWait();
+            return;
+        }
+        if (ampm == null || (!ampm.equals("AM") && !ampm.equals("PM"))) {
+            Alert a = new Alert(Alert.AlertType.WARNING, "Please select AM or PM");
+            a.showAndWait();
+            return;
+        }
+        
+        if (date != null) {
+            try {
+                // Convert 12-hour to 24-hour format
+                int hour24 = hour;
+                if ("PM".equals(ampm) && hour != 12) {
+                    hour24 = hour + 12;
+                } else if ("AM".equals(ampm) && hour == 12) {
+                    hour24 = 0;
+                }
+                
+                // Validate the resulting time
+                if (hour24 < 0 || hour24 > 23) {
+                    Alert a = new Alert(Alert.AlertType.WARNING, "Invalid hour value calculated");
+                    a.showAndWait();
+                    return;
+                }
+                
+                task.setDueDate(LocalDateTime.of(date, LocalTime.of(hour24, minute)));
+            } catch (Exception ex) {
+                Alert a = new Alert(Alert.AlertType.WARNING, "Invalid time: " + ex.getMessage());
+                a.showAndWait();
+                return;
+            }
         } else {
-            task.setDueDate(null);
+            // If no date but time is set, use today's date
+            task.setDueDate(LocalDateTime.of(LocalDate.now(), LocalTime.of(9, 0)));
         }
 
         task.setRepeatRule(buildRepeatRule());
