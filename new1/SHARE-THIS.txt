@@ -1,0 +1,41 @@
+DOABLE TODO LIST - QUICK START FOR YOUR FRIENDS
+================================================
+
+What they need to do:
+
+1. DOWNLOAD & EXTRACT
+   - Download: Doable-1.0.0-Installer.zip
+   - Right-click → "Extract All"
+   - Open the extracted folder
+
+2. RUN INSTALLER
+   - Double-click: install.bat
+   - If asked about Java: Press Y, then download from https://adoptium.net/
+   - Installation completes in seconds
+
+3. LAUNCH THE APP
+   - Search for "Doable" in Windows Start Menu
+   - Or double-click: Doable.jar
+   - That's it! App opens and is ready to use
+
+WHAT THEY GET:
+✓ Simple todo task management
+✓ Reminders with notifications
+✓ Custom repeat schedules (Daily/Weekly/Monthly/Custom Days)
+✓ Task categories
+✓ Windows system notifications
+✓ Custom sound alerts
+✓ Auto-sorting and filtering
+
+SYSTEM REQUIREMENTS:
+- Windows 7 or later
+- Java 11+ (auto-detected, free download if missing)
+- 512 MB RAM minimum
+
+SUPPORT:
+- "Java not found?" - Install from https://adoptium.net/
+- "App won't start?" - Run Command Prompt from folder, type: java -jar Doable.jar
+- Other issues? Check INSTALLATION-GUIDE.txt in the extracted folder
+
+================================================
+Ready to share! Just send: Doable-1.0.0-Installer.zip

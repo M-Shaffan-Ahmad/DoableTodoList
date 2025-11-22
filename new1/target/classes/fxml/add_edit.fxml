@@ -1,0 +1,85 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<?import javafx.geometry.Insets?>
+<?import javafx.scene.control.*?>
+<?import javafx.scene.layout.*?>
+<ScrollPane xmlns:fx="http://javafx.com/fxml/1" fx:controller="com.doable.controller.AddEditController" style="-fx-font-family: 'Segoe UI', 'Arial'; -fx-background-color: #ffffff;">
+    <VBox spacing="16" style="-fx-background-color: #ffffff;">
+        <padding>
+            <Insets top="20" left="20" right="20" bottom="20" />
+        </padding>
+        
+        <!-- Title Section -->
+        <VBox spacing="8">
+            <Label text="Tell us about your task" style="-fx-font-size: 16; -fx-font-weight: bold; -fx-text-fill: #1f2937;" />
+            <Label text="Title" style="-fx-font-size: 12; -fx-text-fill: #6b7280; -fx-font-weight: bold;" />
+            <TextField fx:id="titleField" style="-fx-padding: 10; -fx-font-size: 13; -fx-border-color: #e5e7eb; -fx-border-radius: 5; -fx-control-inner-background: #f9fafb;" promptText="Enter task title" />
+        </VBox>
+
+        <!-- Description Section -->
+        <VBox spacing="8">
+            <Label text="Description" style="-fx-font-size: 12; -fx-text-fill: #6b7280; -fx-font-weight: bold;" />
+            <TextArea fx:id="descField" prefRowCount="4" wrapText="true" style="-fx-padding: 10; -fx-font-size: 12; -fx-border-color: #e5e7eb; -fx-border-radius: 5; -fx-control-inner-background: #f9fafb;" promptText="Add description (optional)" />
+        </VBox>
+
+        <!-- Due Date &amp; Time Section -->
+        <VBox spacing="8">
+            <Label text="Date &amp; Time" style="-fx-font-size: 12; -fx-text-fill: #6b7280; -fx-font-weight: bold;" />
+            <HBox spacing="12">
+                <VBox spacing="6" HBox.hgrow="ALWAYS">
+                    <Label text="Due Date" style="-fx-font-size: 11; -fx-text-fill: #6b7280;" />
+                    <DatePicker fx:id="datePicker" style="-fx-padding: 8; -fx-font-size: 12; -fx-border-color: #e5e7eb; -fx-border-radius: 5;" />
+                </VBox>
+                <VBox spacing="6" prefWidth="120">
+                    <Label text="Time (HH:MM)" style="-fx-font-size: 11; -fx-text-fill: #6b7280;" />
+                    <TextField fx:id="timeField" style="-fx-padding: 8; -fx-font-size: 12; -fx-border-color: #e5e7eb; -fx-border-radius: 5; -fx-control-inner-background: #f9fafb;" promptText="14:30" />
+                </VBox>
+            </HBox>
+        </VBox>
+
+        <!-- Repeat Section -->
+        <VBox spacing="8">
+            <Label text="Repeat" style="-fx-font-size: 12; -fx-text-fill: #6b7280; -fx-font-weight: bold;" />
+            <HBox spacing="8">
+                <ToggleButton text="Daily" style="-fx-padding: 8 12; -fx-font-size: 11; -fx-border-radius: 4;" fx:id="repeatDaily" />
+                <ToggleButton text="Weekly" style="-fx-padding: 8 12; -fx-font-size: 11; -fx-border-radius: 4;" fx:id="repeatWeekly" />
+                <ToggleButton text="Monthly" style="-fx-padding: 8 12; -fx-font-size: 11; -fx-border-radius: 4;" fx:id="repeatMonthly" />
+                <ToggleButton text="Custom" style="-fx-padding: 8 12; -fx-font-size: 11; -fx-border-radius: 4;" fx:id="repeatCustom" />
+            </HBox>
+            <Label text="No repeat" style="-fx-font-size: 11; -fx-text-fill: #9ca3af;" fx:id="noRepeatLabel" />
+            <ChoiceBox fx:id="repeatChoice" style="-fx-font-size: 11; -fx-padding: 8;" />
+        </VBox>
+
+        <!-- Days Selection for Weekly -->
+        <VBox spacing="8" fx:id="daysSection" style="-fx-border-color: #e5e7eb; -fx-border-radius: 5; -fx-padding: 12; -fx-background-color: #f9fafb;" managed="false" visible="false">
+            <Label text="Select Days" style="-fx-font-size: 11; -fx-text-fill: #6b7280; -fx-font-weight: bold;" />
+            <HBox spacing="8">
+                <ToggleButton text="Monday" style="-fx-padding: 6 10; -fx-font-size: 10;" fx:id="dayMonday" />
+                <ToggleButton text="Tuesday" style="-fx-padding: 6 10; -fx-font-size: 10;" fx:id="dayTuesday" />
+                <ToggleButton text="Wednesday" style="-fx-padding: 6 10; -fx-font-size: 10;" fx:id="dayWednesday" />
+                <ToggleButton text="Thursday" style="-fx-padding: 6 10; -fx-font-size: 10;" fx:id="dayThursday" />
+                <ToggleButton text="Friday" style="-fx-padding: 6 10; -fx-font-size: 10;" fx:id="dayFriday" />
+            </HBox>
+            <HBox spacing="8">
+                <ToggleButton text="Saturday" style="-fx-padding: 6 10; -fx-font-size: 10;" fx:id="daySaturday" />
+                <ToggleButton text="Sunday" style="-fx-padding: 6 10; -fx-font-size: 10;" fx:id="daySunday" />
+            </HBox>
+        </VBox>
+
+        <!-- Category Section -->
+        <VBox spacing="8">
+            <Label text="Category" style="-fx-font-size: 12; -fx-text-fill: #6b7280; -fx-font-weight: bold;" />
+            <HBox spacing="8">
+                <ComboBox fx:id="categoryCombo" style="-fx-font-size: 12; -fx-padding: 8;" prefWidth="250" HBox.hgrow="ALWAYS" />
+                <Button text="+ New" onAction="#onNewCategory" style="-fx-padding: 8 12; -fx-font-size: 11; -fx-background-color: #3b82f6; -fx-text-fill: white;" />
+            </HBox>
+        </VBox>
+
+        <!-- Action Buttons -->
+        <Region VBox.vgrow="ALWAYS" />
+        <HBox spacing="12" alignment="CENTER_RIGHT">
+            <Button text="Set Reminder" onAction="#onSetReminder" style="-fx-padding: 10 24; -fx-font-size: 13; -fx-background-color: #2563eb; -fx-text-fill: white; -fx-font-weight: bold; -fx-cursor: hand; -fx-border-radius: 6;" />
+            <Button text="Save" onAction="#onSave" style="-fx-padding: 10 24; -fx-font-size: 13; -fx-background-color: #10b981; -fx-text-fill: white; -fx-font-weight: bold; -fx-cursor: hand; -fx-border-radius: 6;" />
+            <Button text="Cancel" onAction="#onCancel" style="-fx-padding: 10 24; -fx-font-size: 13; -fx-background-color: #6b7280; -fx-text-fill: white; -fx-font-weight: bold; -fx-cursor: hand; -fx-border-radius: 6;" />
+        </HBox>
+    </VBox>
+</ScrollPane>

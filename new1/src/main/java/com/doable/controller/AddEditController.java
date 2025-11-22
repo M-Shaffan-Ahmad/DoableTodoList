@@ -1,0 +1,335 @@
+package com.doable.controller;
+
+import javafx.fxml.FXML;
+import javafx.scene.control.*;
+import javafx.scene.layout.VBox;
+import javafx.stage.Stage;
+import com.doable.dao.TaskDao;
+import com.doable.dao.CategoryDao;
+import com.doable.model.Task;
+import com.doable.model.Category;
+
+import java.sql.SQLException;
+import java.time.LocalDate;
+import java.time.LocalDateTime;
+import java.time.LocalTime;
+
+public class AddEditController {
+    @FXML private TextField titleField;
+    @FXML private TextArea descField;
+    @FXML private DatePicker datePicker;
+    @FXML private TextField timeField;
+    @FXML private ChoiceBox<String> repeatChoice;
+    @FXML private ToggleButton repeatDaily;
+    @FXML private ToggleButton repeatWeekly;
+    @FXML private ToggleButton repeatMonthly;
+    @FXML private ToggleButton repeatCustom;
+    @FXML private Label noRepeatLabel;
+    @FXML private VBox daysSection;
+    @FXML private ToggleButton dayMonday;
+    @FXML private ToggleButton dayTuesday;
+    @FXML private ToggleButton dayWednesday;
+    @FXML private ToggleButton dayThursday;
+    @FXML private ToggleButton dayFriday;
+    @FXML private ToggleButton daySaturday;
+    @FXML private ToggleButton daySunday;
+    @FXML private ComboBox<Category> categoryCombo;
+
+    private Task task;
+    private boolean saved = false;
+    private final TaskDao dao = new TaskDao();
+    private final CategoryDao categoryDao = new CategoryDao();
+    private final ToggleGroup repeatGroup = new ToggleGroup();
+
+    public void initialize() {
+        // Setup repeat toggle group
+        repeatDaily.setToggleGroup(repeatGroup);
+        repeatWeekly.setToggleGroup(repeatGroup);
+        repeatMonthly.setToggleGroup(repeatGroup);
+        repeatCustom.setToggleGroup(repeatGroup);
+
+        // Listen to repeat button changes
+        repeatDaily.selectedProperty().addListener((obs, old, newVal) -> {
+            if (newVal) {
+                noRepeatLabel.setVisible(false);
+                daysSection.setVisible(false);
+                daysSection.setManaged(false);
+                repeatChoice.setValue("DAILY");
+            }
+        });
+
+        repeatWeekly.selectedProperty().addListener((obs, old, newVal) -> {
+            if (newVal) {
+                noRepeatLabel.setVisible(false);
+                daysSection.setVisible(true);
+                daysSection.setManaged(true);
+                repeatChoice.setValue("WEEKLY");
+            }
+        });
+
+        repeatMonthly.selectedProperty().addListener((obs, old, newVal) -> {
+            if (newVal) {
+                noRepeatLabel.setVisible(false);
+                daysSection.setVisible(false);
+                daysSection.setManaged(false);
+                repeatChoice.setValue("MONTHLY");
+            }
+        });
+
+        repeatCustom.selectedProperty().addListener((obs, old, newVal) -> {
+            if (newVal) {
+                noRepeatLabel.setVisible(false);
+                daysSection.setVisible(true);
+                daysSection.setManaged(true);
+                repeatChoice.setValue("CUSTOM");
+            }
+        });
+
+        repeatChoice.getItems().addAll("NONE", "DAILY", "WEEKLY", "MONTHLY", "CUSTOM");
+        repeatChoice.setValue("NONE");
+        
+        // Load categories
+        loadCategories();
+    }
+    
+    private void loadCategories() {
+        try {
+            categoryCombo.getItems().clear();
+            categoryCombo.getItems().add(new Category(0, "No Category", "#ffffff"));
+            categoryCombo.getItems().addAll(categoryDao.findAll());
+            categoryCombo.setValue(categoryCombo.getItems().get(0));
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+    }
+
+    public void setTask(Task t) {
+        if (t == null) {
+            this.task = new Task();
+            return;
+        }
+        this.task = t;
+        titleField.setText(t.getTitle());
+        descField.setText(t.getDescription());
+        if (t.getDueDate() != null) {
+            datePicker.setValue(t.getDueDate().toLocalDate());
+            java.time.LocalTime lt = t.getDueDate().toLocalTime();
+            timeField.setText(String.format("%02d:%02d", lt.getHour(), lt.getMinute()));
+        }
+        
+        String repeatRule = t.getRepeatRule() == null ? "NONE" : t.getRepeatRule();
+        
+        // Set repeat buttons based on rule
+        if (repeatRule.startsWith("CUSTOM_")) {
+            repeatCustom.setSelected(true);
+            daysSection.setVisible(true);
+            daysSection.setManaged(true);
+            repeatChoice.setValue("CUSTOM");
+            
+            // Parse custom days
+            String[] parts = repeatRule.split("_");
+            if (parts.length > 1) {
+                String[] days = parts[1].split(",");
+                for (String day : days) {
+                    switch (day.trim()) {
+                        case "MON":
+                            dayMonday.setSelected(true);
+                            break;
+                        case "TUE":
+                            dayTuesday.setSelected(true);
+                            break;
+                        case "WED":
+                            dayWednesday.setSelected(true);
+                            break;
+                        case "THU":
+                            dayThursday.setSelected(true);
+                            break;
+                        case "FRI":
+                            dayFriday.setSelected(true);
+                            break;
+                        case "SAT":
+                            daySaturday.setSelected(true);
+                            break;
+                        case "SUN":
+                            daySunday.setSelected(true);
+                            break;
+                    }
+                }
+            }
+        } else {
+            repeatChoice.setValue(repeatRule);
+            
+            // Set repeat buttons based on rule
+            switch (repeatRule) {
+                case "DAILY":
+                    repeatDaily.setSelected(true);
+                    break;
+                case "WEEKLY":
+                    repeatWeekly.setSelected(true);
+                    daysSection.setVisible(true);
+                    daysSection.setManaged(true);
+                    break;
+                case "MONTHLY":
+                    repeatMonthly.setSelected(true);
+                    break;
+                default:
+                    noRepeatLabel.setVisible(true);
+            }
+        }
+        
+        // Set category
+        if (t.getCategoryId() > 0) {
+            for (Category cat : categoryCombo.getItems()) {
+                if (cat.getId() == t.getCategoryId()) {
+                    categoryCombo.setValue(cat);
+                    break;
+                }
+            }
+        }
+    }
+
+    private String buildRepeatRule() {
+        String choice = repeatChoice.getValue();
+        if ("CUSTOM".equals(choice)) {
+            // Build custom repeat rule from selected days
+            StringBuilder days = new StringBuilder();
+            if (dayMonday.isSelected()) days.append("MON,");
+            if (dayTuesday.isSelected()) days.append("TUE,");
+            if (dayWednesday.isSelected()) days.append("WED,");
+            if (dayThursday.isSelected()) days.append("THU,");
+            if (dayFriday.isSelected()) days.append("FRI,");
+            if (daySaturday.isSelected()) days.append("SAT,");
+            if (daySunday.isSelected()) days.append("SUN,");
+            
+            if (days.length() == 0) {
+                Alert a = new Alert(Alert.AlertType.WARNING, "Please select at least one day for custom repeat");
+                a.showAndWait();
+                return "NONE";
+            }
+            
+            // Remove trailing comma
+            String daysList = days.substring(0, days.length() - 1);
+            System.out.println("Custom repeat rule: CUSTOM_" + daysList);
+            return "CUSTOM_" + daysList;
+        }
+        return choice != null ? choice : "NONE";
+    }
+
+    @FXML
+    private void onSetReminder() {
+        LocalDate date = datePicker.getValue();
+        if (date == null) {
+            Alert a = new Alert(Alert.AlertType.WARNING, "Please select a due date for the reminder");
+            a.showAndWait();
+            return;
+        }
+        Alert a = new Alert(Alert.AlertType.INFORMATION, "Reminder set for " + date);
+        a.showAndWait();
+    }
+    
+    @FXML
+    private void onNewCategory() {
+        // Create a dialog to add new category
+        TextInputDialog dialog = new TextInputDialog();
+        dialog.setTitle("Create New Category");
+        dialog.setHeaderText("Enter category name:");
+        dialog.setContentText("Category name:");
+        
+        java.util.Optional<String> result = dialog.showAndWait();
+        if (result.isPresent() && !result.get().trim().isEmpty()) {
+            String categoryName = result.get().trim();
+            try {
+                // Check if category already exists
+                for (Category cat : categoryCombo.getItems()) {
+                    if (cat.getName().equalsIgnoreCase(categoryName)) {
+                        Alert a = new Alert(Alert.AlertType.WARNING, "Category already exists!");
+                        a.showAndWait();
+                        return;
+                    }
+                }
+                
+                // Create new category with default color
+                Category newCat = new Category(categoryName, "#3b82f6");
+                categoryDao.save(newCat);
+                
+                // Add to combo box and select it
+                categoryCombo.getItems().add(newCat);
+                categoryCombo.setValue(newCat);
+                
+                Alert a = new Alert(Alert.AlertType.INFORMATION, "Category '" + categoryName + "' created successfully!");
+                a.showAndWait();
+            } catch (SQLException e) {
+                e.printStackTrace();
+                Alert a = new Alert(Alert.AlertType.ERROR, "Error creating category: " + e.getMessage());
+                a.showAndWait();
+            }
+        }
+    }
+
+    @FXML
+    private void onSave() {
+        String title = titleField.getText();
+        if (title == null || title.trim().isEmpty()) {
+            Alert a = new Alert(Alert.AlertType.WARNING, "Title is required");
+            a.showAndWait();
+            return;
+        }
+        task.setTitle(title.trim());
+        task.setDescription(descField.getText());
+
+        LocalDate date = datePicker.getValue();
+        String time = timeField.getText();
+        if (date != null && time != null && !time.isBlank()) {
+            try {
+                String[] parts = time.split(":");
+                int h = Integer.parseInt(parts[0]);
+                int m = Integer.parseInt(parts[1]);
+                task.setDueDate(LocalDateTime.of(date, LocalTime.of(h, m)));
+            } catch (Exception ex) {
+                Alert a = new Alert(Alert.AlertType.WARNING, "Invalid time format. Use HH:MM");
+                a.showAndWait();
+                return;
+            }
+        } else if (date != null) {
+            task.setDueDate(LocalDateTime.of(date, LocalTime.of(9, 0)));
+        } else {
+            task.setDueDate(null);
+        }
+
+        task.setRepeatRule(buildRepeatRule());
+        
+        // Set category
+        Category selected = categoryCombo.getValue();
+        if (selected != null && selected.getId() > 0) {
+            task.setCategoryId(selected.getId());
+            task.setCategoryName(selected.getName());
+        } else {
+            task.setCategoryId(0);
+            task.setCategoryName(null);
+        }
+
+        try {
+            dao.save(task);
+            saved = true;
+            close();
+        } catch (SQLException e) {
+            e.printStackTrace();
+            Alert a = new Alert(Alert.AlertType.ERROR, "Error saving task: " + e.getMessage());
+            a.showAndWait();
+        }
+    }
+
+    @FXML
+    private void onCancel() {
+        close();
+    }
+
+    private void close() {
+        Stage s = (Stage) titleField.getScene().getWindow();
+        s.close();
+    }
+
+    public boolean isSaved() {
+        return saved;
+    }
+}

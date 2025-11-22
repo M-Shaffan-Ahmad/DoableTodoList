@@ -1,0 +1,53 @@
+# Doable Todo List - Installation Guide
+
+## What Your Friends Need
+
+Your friends need **Java 11 or higher** to run this application.
+
+## Installation Steps
+
+### 1. Install Java (if not already installed)
+- Download from: **https://adoptium.net/**
+- Choose **Eclipse Temurin LTS** version
+- Install it and follow the installer instructions
+- After installation, restart your computer (or just your terminal)
+
+### 2. Run the Application
+1. Extract the `Doable` folder to a location you prefer (e.g., `C:\Programs\Doable`)
+2. Double-click **`run.bat`**
+3. Wait for the application to start (it may take a few seconds)
+
+That's it! The application should now open.
+
+## What to Share
+
+Share the **entire `Doable` folder** with your friends. It contains:
+- `Doable.jar` - The application file
+- `run.bat` - Launcher script
+- `README.md` - This guide
+
+## Features
+
+✓ Create and manage todo tasks  
+✓ Set reminders with notifications  
+✓ Custom repeat schedules (Daily, Weekly, Monthly, Custom days)  
+✓ Task categories and filtering  
+✓ Windows system notifications  
+✓ Custom ringtone alerts  
+✓ Complete auto-sorting  
+
+## Troubleshooting
+
+**"Java is not installed"**
+- Install Java from https://adoptium.net/ and restart
+
+**Application doesn't start**
+- Try running from Command Prompt (cmd.exe) instead of double-clicking
+- Make sure Java is in your PATH: `java -version` in cmd should show version info
+
+**App runs but looks small**
+- Resize the window - it will remember your preference next time
+
+## Support
+
+Need help? Make sure Java is installed and try running `run.bat` again.
