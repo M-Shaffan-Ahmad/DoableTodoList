@@ -2,7 +2,9 @@ package com.doable.controller;
 
 import com.doable.util.NotificationUtil;
 import com.doable.dao.CategoryDao;
+import com.doable.dao.UserDao;
 import com.doable.model.Category;
+import com.doable.model.User;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 import javafx.fxml.FXML;
@@ -28,20 +30,34 @@ import java.util.Set;
 
 public class HomeController {
     @FXML private ListView<Task> taskList;
+    @FXML private ListView<Task> completedTaskList;
     @FXML private ChoiceBox<String> filterChoice;
     @FXML private ComboBox<Category> categoryFilter;
+    @FXML private ChoiceBox<String> taskTypeFilter;
+    @FXML private DatePicker completedDateFilter;
+    @FXML private ComboBox<String> completedCategoryFilter;
     @FXML private Label statusLabel;
+    @FXML private Button editButton;
+    @FXML private Button deleteButton;
 
     private final TaskDao taskDao = new TaskDao();
     private final CategoryDao categoryDao = new CategoryDao();
     private final ObservableList<Task> tasks = FXCollections.observableArrayList();
+    private final ObservableList<Task> completedTasks = FXCollections.observableArrayList();
     private List<Task> allTasks = List.of();
+    private List<Task> allCompletedManagerTasks = List.of();
     private final Set<Long> notifiedTaskIds = new HashSet<>(); // Track which tasks have been notified
     private final Set<Long> notifiedAtExactTimeIds = new HashSet<>(); // Track tasks notified at exact due time
+    
+    private User currentUser;
 
     public void initialize() {
         filterChoice.getItems().addAll("All", "Pending", "Completed");
         filterChoice.setValue("All");
+        
+        taskTypeFilter.getItems().addAll("All Tasks", "Manager Assigned", "My Tasks");
+        taskTypeFilter.setValue("All Tasks");
+        
         taskList.setItems(tasks);
         taskList.setCellFactory(lv -> new ListCell<>() {
             private final Label checkBoxLabel = new Label();
@@ -82,11 +98,26 @@ public class HomeController {
                     if (item.getDueDate() != null) {
                         display += " — " + item.getDueDate();
                     }
+                    
+                    // Add manager badge if assigned by manager
+                    if ("MANAGER".equals(item.getAssignmentType())) {
+                        display = "👔 " + display; // Add manager badge
+                    }
+                    
                     taskLabel.setText(display);
 
                     // Create HBox with checkbox and task label
                     HBox hbox = new HBox(10);
                     hbox.setStyle("-fx-padding: 5;");
+                    
+                    // Highlight manager-assigned tasks with prominent yellow background and styling
+                    if ("MANAGER".equals(item.getAssignmentType())) {
+                        hbox.setStyle("-fx-padding: 8; -fx-background-color: #fef08a; -fx-border-color: #f59e0b; -fx-border-width: 2; -fx-border-radius: 4;");
+                        taskLabel.setStyle("-fx-font-size: 13; -fx-text-fill: #1f2937; -fx-font-weight: bold;");
+                    } else {
+                        taskLabel.setStyle("-fx-font-size: 12; -fx-text-fill: #333333;");
+                    }
+                    
                     hbox.getChildren().addAll(checkBoxLabel, taskLabel);
                     setGraphic(hbox);
                     setText(null);
@@ -100,8 +131,44 @@ public class HomeController {
         // Add filter listeners
         filterChoice.getSelectionModel().selectedItemProperty().addListener((obs, old, newVal) -> applyFilters());
         categoryFilter.getSelectionModel().selectedItemProperty().addListener((obs, old, newVal) -> applyFilters());
+        taskTypeFilter.getSelectionModel().selectedItemProperty().addListener((obs, old, newVal) -> applyFilters());
+        
+        // Setup completed tasks list view
+        completedTaskList.setItems(completedTasks);
+        completedTaskList.setCellFactory(lv -> new ListCell<>() {
+            @Override
+            protected void updateItem(Task item, boolean empty) {
+                super.updateItem(item, empty);
+                if (empty || item == null) {
+                    setGraphic(null);
+                    setText(null);
+                } else {
+                    Label taskLabel = new Label();
+                    String display = "✓ " + item.getTitle();
+                    if (item.getCategoryName() != null && !item.getCategoryName().isEmpty()) {
+                        display += " [" + item.getCategoryName() + "]";
+                    }
+                    if (item.getDueDate() != null) {
+                        display += " — " + item.getDueDate();
+                    }
+                    taskLabel.setText(display);
+                    taskLabel.setStyle("-fx-font-size: 12; -fx-text-fill: #10b981;");
+                    taskLabel.setWrapText(true);
+                    taskLabel.setMaxWidth(600);
+                    HBox hbox = new HBox(10, taskLabel);
+                    hbox.setStyle("-fx-padding: 5; -fx-background-color: #f0fdf4; -fx-border-color: #10b981; -fx-border-width: 1;");
+                    setGraphic(hbox);
+                    setText(null);
+                }
+            }
+        });
+        
+        // Setup completed tasks filters
+        completedDateFilter.setOnAction(e -> applyCompletedFilters());
+        completedCategoryFilter.getSelectionModel().selectedItemProperty().addListener((obs, old, newVal) -> applyCompletedFilters());
         
         loadTasks();
+        loadCompletedManagerTasks();
         startReminderChecker();
     }
     
@@ -109,7 +176,7 @@ public class HomeController {
         try {
             categoryFilter.getItems().clear();
             // Add "All Categories" option
-            Category allCat = new Category(0, "All Categories", "#ffffff");
+            Category allCat = new Category(0, "All Categories");
             categoryFilter.getItems().add(allCat);
             categoryFilter.getItems().addAll(categoryDao.findAll());
             categoryFilter.setValue(allCat);
@@ -120,7 +187,36 @@ public class HomeController {
 
     private void loadTasks() {
         try {
-            allTasks = taskDao.findAll();
+            if (currentUser == null) {
+                allTasks = List.of();
+            } else {
+                // Load tasks assigned to this employee via assignments table
+                com.doable.dao.AssignmentDao assignmentDao = new com.doable.dao.AssignmentDao();
+                List<com.doable.model.Assignment> assignments = assignmentDao.findByEmployeeId(currentUser.getId());
+                
+                List<Task> tasks = new java.util.ArrayList<>();
+                for (com.doable.model.Assignment assignment : assignments) {
+                    if (!assignment.isMarkedForCompletion()) {  // Only load pending assignments
+                        Task task = taskDao.findById(assignment.getTaskId());
+                        if (task != null) {
+                            // Set marked_for_completion from assignment, not from task
+                            task.setMarkedForCompletion(assignment.isMarkedForCompletion());
+                            
+                            // Determine if task was assigned by manager or self-created
+                            // If assignedBy is different from current user, it's a manager-assigned task
+                            if (assignment.getAssignedBy() != currentUser.getId()) {
+                                task.setAssignmentType("MANAGER");
+                            } else {
+                                task.setAssignmentType("PERSONAL");
+                            }
+                            
+                            tasks.add(task);
+                        }
+                    }
+                }
+                allTasks = tasks;
+                System.out.println("DEBUG: Loaded " + allTasks.size() + " pending tasks for employee: " + currentUser.getUsername());
+            }
             applyFilters();
         } catch (SQLException e) {
             statusLabel.setText("Error loading tasks: " + e.getMessage());
@@ -130,10 +226,20 @@ public class HomeController {
     
     private void applyFilters() {
         String statusFilter = filterChoice.getValue();
+        String taskTypeFilter = this.taskTypeFilter.getValue();
         Category selectedCategory = categoryFilter.getValue();
         LocalDateTime now = LocalDateTime.now();
         
         List<Task> filtered = allTasks.stream()
+            .filter(t -> {
+                // Apply task type filter
+                if ("Manager Assigned".equals(taskTypeFilter)) {
+                    return "MANAGER".equals(t.getAssignmentType());
+                } else if ("My Tasks".equals(taskTypeFilter)) {
+                    return !"MANAGER".equals(t.getAssignmentType());
+                }
+                return true; // "All Tasks"
+            })
             .filter(t -> {
                 // Apply status filter
                 if ("Pending".equals(statusFilter)) {
@@ -165,7 +271,15 @@ public class HomeController {
                 return t.getCategoryId() == selectedCategory.getId();
             })
             .sorted((t1, t2) -> {
-                // Sort: incomplete (markedForCompletion=false) first, then completed (markedForCompletion=true)
+                // Sort: manager-assigned tasks first, then by incomplete/complete
+                boolean t1IsManager = "MANAGER".equals(t1.getAssignmentType());
+                boolean t2IsManager = "MANAGER".equals(t2.getAssignmentType());
+                
+                if (t1IsManager != t2IsManager) {
+                    return Boolean.compare(t2IsManager, t1IsManager); // Manager tasks first
+                }
+                
+                // Then sort: incomplete (markedForCompletion=false) first, then completed (markedForCompletion=true)
                 if (t1.isMarkedForCompletion() == t2.isMarkedForCompletion()) {
                     // If same marked status, maintain original order by due date
                     if (t1.getDueDate() != null && t2.getDueDate() != null) {
@@ -179,6 +293,7 @@ public class HomeController {
             .toList();
         
         tasks.setAll(filtered);
+        updateEditDeleteButtonStatus();
         statusLabel.setText("Showing " + filtered.size() + " of " + allTasks.size() + " tasks");
     }
 
@@ -236,6 +351,14 @@ public class HomeController {
             a.showAndWait();
             return;
         }
+        
+        // Prevent editing manager-assigned tasks
+        if ("MANAGER".equals(sel.getAssignmentType())) {
+            Alert a = new Alert(Alert.AlertType.WARNING, "Manager-assigned tasks cannot be edited. You can only mark them as complete.");
+            a.showAndWait();
+            return;
+        }
+        
         openEditor(sel);
     }
 
@@ -243,6 +366,14 @@ public class HomeController {
     private void onDeleteTask() {
         Task sel = taskList.getSelectionModel().getSelectedItem();
         if (sel == null) return;
+        
+        // Prevent deleting manager-assigned tasks
+        if ("MANAGER".equals(sel.getAssignmentType())) {
+            Alert a = new Alert(Alert.AlertType.WARNING, "Manager-assigned tasks cannot be deleted. You can only mark them as complete.");
+            a.showAndWait();
+            return;
+        }
+        
         Alert a = new Alert(Alert.AlertType.CONFIRMATION);
         a.setTitle("Delete Task");
         a.setHeaderText("Delete task");
@@ -262,11 +393,56 @@ public class HomeController {
     @FXML
     private void onRefresh() { loadTasks(); }
 
+    @FXML
+    private void onLogout() {
+        Alert confirmation = new Alert(Alert.AlertType.CONFIRMATION);
+        confirmation.setTitle("Logout");
+        confirmation.setHeaderText("Logout?");
+        confirmation.setContentText("Are you sure you want to logout?");
+        Optional<ButtonType> result = confirmation.showAndWait();
+        if (result.isPresent() && result.get() == ButtonType.OK) {
+            try {
+                // Go back to login screen
+                FXMLLoader loader = new FXMLLoader(HomeController.class.getResource("/fxml/login.fxml"));
+                Parent root = loader.load();
+                Stage stage = (Stage) editButton.getScene().getWindow();
+                stage.setScene(new Scene(root));
+                stage.show();
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+        }
+    }
+
+    private void updateEditDeleteButtonStatus() {
+        Task selected = taskList.getSelectionModel().getSelectedItem();
+        
+        if (selected == null) {
+            editButton.setDisable(true);
+            deleteButton.setDisable(true);
+            return;
+        }
+        
+        // Disable edit/delete for manager-assigned tasks
+        boolean isManagerTask = "MANAGER".equals(selected.getAssignmentType());
+        editButton.setDisable(isManagerTask);
+        deleteButton.setDisable(isManagerTask);
+        
+        if (isManagerTask) {
+            editButton.setStyle("-fx-padding: 8 12; -fx-font-size: 11; -fx-background-color: #9ca3af; -fx-text-fill: white;");
+            deleteButton.setStyle("-fx-padding: 8 12; -fx-font-size: 11; -fx-background-color: #9ca3af; -fx-text-fill: white;");
+        } else {
+            editButton.setStyle("-fx-padding: 8 12; -fx-font-size: 11; -fx-background-color: #3b82f6; -fx-text-fill: white;");
+            deleteButton.setStyle("-fx-padding: 8 12; -fx-font-size: 11; -fx-background-color: #ef4444; -fx-text-fill: white;");
+        }
+    }
+
     private void openEditor(Task task) {
         try {
             FXMLLoader loader = new FXMLLoader(HomeController.class.getResource("/fxml/add_edit.fxml"));
             Parent root = loader.load();
             AddEditController ctrl = loader.getController();
+            ctrl.setCurrentUser(currentUser);
             ctrl.setTask(task);
 
             Stage s = new Stage();
@@ -285,26 +461,54 @@ public class HomeController {
         try {
             boolean isCurrentlyMarked = task.isMarkedForCompletion();
             
-            if (!isCurrentlyMarked) {
-                // Task is being marked - set as completed
-                task.setMarkedForCompletion(true);
-                task.setCompleted(true);
-                taskDao.save(task);
-            } else {
-                // Task is being unmarked - renew it based on repeat rule
-                task.setMarkedForCompletion(false);
-                renewTask(task);
-                task.setCompleted(false);
-                taskDao.save(task);
+            // Find the assignment for this task and employee
+            com.doable.dao.AssignmentDao assignmentDao = new com.doable.dao.AssignmentDao();
+            com.doable.model.Assignment assignment = assignmentDao.findByTaskAndEmployee(task.getId(), currentUser.getId());
+            
+            if (assignment == null) {
+                System.out.println("DEBUG: No assignment found for task " + task.getId() + " and employee " + currentUser.getId());
+                return;
             }
+            
+            if (!isCurrentlyMarked) {
+                // Task is being marked complete - update assignment
+                assignment.setMarkedForCompletion(true);
+                assignment.setCompletedAt(System.currentTimeMillis());
+                System.out.println("DEBUG: Marking assignment " + assignment.getId() + " as complete");
+                
+                // Log action
+                com.doable.dao.ActionLogDao logDao = new com.doable.dao.ActionLogDao();
+                logDao.save(new com.doable.model.ActionLog(
+                    currentUser.getId(),
+                    "COMPLETE_TASK",
+                    "Completed task \"" + task.getTitle() + "\" (ID:" + task.getId() + ")"
+                ));
+            } else {
+                // Task is being unmarked - mark assignment as pending again
+                assignment.setMarkedForCompletion(false);
+                assignment.setCompletedAt(0);
+                System.out.println("DEBUG: Marking assignment " + assignment.getId() + " as pending");
+                
+                // Log action
+                com.doable.dao.ActionLogDao logDao = new com.doable.dao.ActionLogDao();
+                logDao.save(new com.doable.model.ActionLog(
+                    currentUser.getId(),
+                    "INCOMPLETE_TASK",
+                    "Marked task \"" + task.getTitle() + "\" (ID:" + task.getId() + ") as incomplete"
+                ));
+            }
+            
+            // Save the assignment (not the task)
+            assignmentDao.save(assignment);
             
             // Refresh the display
             loadTasks();
+            loadCompletedManagerTasks();  // Also update completed tasks view
         } catch (SQLException e) {
             e.printStackTrace();
             Alert alert = new Alert(Alert.AlertType.ERROR);
             alert.setTitle("Error");
-            alert.setHeaderText("Failed to update task");
+            alert.setHeaderText("Failed to update task assignment");
             alert.setContentText(e.getMessage());
             alert.showAndWait();
         }
@@ -457,5 +661,91 @@ public class HomeController {
         
         checkerThread.setDaemon(true);
         checkerThread.start();
+    }
+
+    private void loadCompletedManagerTasks() {
+        try {
+            if (currentUser == null) {
+                allCompletedManagerTasks = List.of();
+            } else {
+                // Load completed assignments for this employee
+                com.doable.dao.AssignmentDao assignmentDao = new com.doable.dao.AssignmentDao();
+                List<com.doable.model.Assignment> assignments = assignmentDao.findByEmployeeId(currentUser.getId());
+                
+                List<Task> completedTasks = new java.util.ArrayList<>();
+                for (com.doable.model.Assignment assignment : assignments) {
+                    if (assignment.isMarkedForCompletion()) {  // Only completed assignments
+                        Task task = taskDao.findById(assignment.getTaskId());
+                        if (task != null) {
+                            // Set marked_for_completion from assignment
+                            task.setMarkedForCompletion(true);
+                            completedTasks.add(task);
+                        }
+                    }
+                }
+                allCompletedManagerTasks = completedTasks;
+                System.out.println("DEBUG: Loaded " + allCompletedManagerTasks.size() + " completed tasks for employee: " + currentUser.getUsername());
+                
+                // Load categories into filter
+                Set<String> categories = new HashSet<>();
+                categories.add("All Categories");
+                for (Task task : allCompletedManagerTasks) {
+                    if (task.getCategoryName() != null && !task.getCategoryName().isEmpty()) {
+                        categories.add(task.getCategoryName());
+                    }
+                }
+                completedCategoryFilter.setItems(FXCollections.observableArrayList(categories));
+                completedCategoryFilter.setValue("All Categories");
+            }
+            applyCompletedFilters();
+        } catch (SQLException e) {
+            statusLabel.setText("Error loading completed tasks: " + e.getMessage());
+            e.printStackTrace();
+        }
+    }
+    
+    private void applyCompletedFilters() {
+        try {
+            java.time.LocalDate dateFilter = completedDateFilter.getValue();
+            String categoryFilter = completedCategoryFilter.getValue();
+            
+            List<Task> filtered = allCompletedManagerTasks.stream()
+                .filter(t -> {
+                    // Apply date filter if selected
+                    if (dateFilter != null && t.getDueDate() != null) {
+                        java.time.LocalDate taskDate = t.getDueDate().toLocalDate();
+                        return taskDate.equals(dateFilter);
+                    }
+                    return true;
+                })
+                .filter(t -> {
+                    // Apply category filter
+                    if (categoryFilter != null && !"All Categories".equals(categoryFilter)) {
+                        return categoryFilter.equals(t.getCategoryName());
+                    }
+                    return true;
+                })
+                .toList();
+            
+            completedTasks.setAll(filtered);
+        } catch (Exception e) {
+            statusLabel.setText("Error filtering completed tasks: " + e.getMessage());
+        }
+    }
+    
+    @FXML
+    private void onClearCompletedFilters() {
+        completedDateFilter.setValue(null);
+        completedCategoryFilter.setValue("All Categories");
+        loadCompletedManagerTasks();
+    }
+
+    public void setCurrentUser(User user) {
+        this.currentUser = user;
+        if (user != null) {
+            System.out.println("HomeController: Current user set to " + user.getUsername());
+            loadTasks();
+            loadCompletedManagerTasks();
+        }
     }
 }

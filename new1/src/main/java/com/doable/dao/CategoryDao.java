@@ -19,10 +19,14 @@ public class CategoryDao {
     }
 
     private Category insert(Category c) throws SQLException {
-        String sql = "INSERT INTO categories(name, color) VALUES(?,?)";
+        String sql = "INSERT INTO categories(name, created_by) VALUES(?,?)";
         try (PreparedStatement ps = conn.prepareStatement(sql)) {
             ps.setString(1, c.getName());
-            ps.setString(2, c.getColor());
+            if (c.getCreatedBy() > 0) {
+                ps.setLong(2, c.getCreatedBy());
+            } else {
+                ps.setNull(2, java.sql.Types.BIGINT);
+            }
             ps.executeUpdate();
             // Get the last inserted ID for SQLite
             try (Statement stmt = conn.createStatement(); 
@@ -34,10 +38,14 @@ public class CategoryDao {
     }
 
     private void update(Category c) throws SQLException {
-        String sql = "UPDATE categories SET name=?, color=? WHERE id=?";
+        String sql = "UPDATE categories SET name=?, created_by=? WHERE id=?";
         try (PreparedStatement ps = conn.prepareStatement(sql)) {
             ps.setString(1, c.getName());
-            ps.setString(2, c.getColor());
+            if (c.getCreatedBy() > 0) {
+                ps.setLong(2, c.getCreatedBy());
+            } else {
+                ps.setNull(2, java.sql.Types.BIGINT);
+            }
             ps.setLong(3, c.getId());
             ps.executeUpdate();
         }
@@ -51,7 +59,7 @@ public class CategoryDao {
     }
 
     public Category findById(long id) throws SQLException {
-        String sql = "SELECT id, name, color FROM categories WHERE id=?";
+        String sql = "SELECT id, name, created_by FROM categories WHERE id=?";
         try (PreparedStatement ps = conn.prepareStatement(sql)) {
             ps.setLong(1, id);
             try (ResultSet rs = ps.executeQuery()) {
@@ -59,7 +67,7 @@ public class CategoryDao {
                     Category c = new Category();
                     c.setId(rs.getLong("id"));
                     c.setName(rs.getString("name"));
-                    c.setColor(rs.getString("color"));
+                    c.setCreatedBy(rs.getLong("created_by"));
                     return c;
                 }
             }
@@ -69,16 +77,30 @@ public class CategoryDao {
 
     public List<Category> findAll() throws SQLException {
         List<Category> list = new ArrayList<>();
-        String sql = "SELECT id, name, color FROM categories ORDER BY name";
+        String sql = "SELECT id, name, created_by FROM categories ORDER BY name";
         try (Statement s = conn.createStatement(); ResultSet rs = s.executeQuery(sql)) {
             while (rs.next()) {
                 Category c = new Category();
                 c.setId(rs.getLong("id"));
                 c.setName(rs.getString("name"));
-                c.setColor(rs.getString("color"));
+                c.setCreatedBy(rs.getLong("created_by"));
                 list.add(c);
             }
         }
         return list;
+    }
+
+    public boolean isCategoryNameExists(String name, long excludeId) throws SQLException {
+        String sql = "SELECT COUNT(*) FROM categories WHERE name = ? AND id != ?";
+        try (PreparedStatement ps = conn.prepareStatement(sql)) {
+            ps.setString(1, name);
+            ps.setLong(2, excludeId);
+            try (ResultSet rs = ps.executeQuery()) {
+                if (rs.next()) {
+                    return rs.getInt(1) > 0;
+                }
+            }
+        }
+        return false;
     }
 }

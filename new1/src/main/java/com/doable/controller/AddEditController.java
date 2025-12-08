@@ -42,6 +42,7 @@ public class AddEditController {
     private final TaskDao dao = new TaskDao();
     private final CategoryDao categoryDao = new CategoryDao();
     private final ToggleGroup repeatGroup = new ToggleGroup();
+    private com.doable.model.User currentUser;
 
     public void initialize() {
         // Setup hour and minute spinners with proper formatting
@@ -137,12 +138,16 @@ public class AddEditController {
     private void loadCategories() {
         try {
             categoryCombo.getItems().clear();
-            categoryCombo.getItems().add(new Category(0, "No Category", "#ffffff"));
+            categoryCombo.getItems().add(new Category(0, "No Category"));
             categoryCombo.getItems().addAll(categoryDao.findAll());
             categoryCombo.setValue(categoryCombo.getItems().get(0));
         } catch (SQLException e) {
             e.printStackTrace();
         }
+    }
+
+    public void setCurrentUser(com.doable.model.User user) {
+        this.currentUser = user;
     }
 
     public void setTask(Task t) {
@@ -327,8 +332,8 @@ public class AddEditController {
                     }
                 }
                 
-                // Create new category with default color
-                Category newCat = new Category(categoryName, "#3b82f6");
+                // Create new category
+                Category newCat = new Category(categoryName);
                 categoryDao.save(newCat);
                 
                 // Add to combo box and select it
@@ -455,6 +460,27 @@ public class AddEditController {
 
         try {
             dao.save(task);
+            
+            // If this is a new task created by an employee,
+            // create an assignment so it shows in their task list
+            if (task.getId() > 0 && currentUser != null) {
+                // Create assignment for this employee
+                com.doable.dao.AssignmentDao assignmentDao = new com.doable.dao.AssignmentDao();
+                com.doable.model.Assignment assignment = new com.doable.model.Assignment();
+                assignment.setTaskId(task.getId());
+                assignment.setEmployeeId(currentUser.getId());
+                assignment.setAssignedBy(currentUser.getId()); // Employee assigns to themselves
+                assignment.setAssignedAt(System.currentTimeMillis());
+                assignment.setMarkedForCompletion(false);
+                try {
+                    assignmentDao.save(assignment);
+                    System.out.println("DEBUG: Assignment created for employee " + currentUser.getUsername() + " and task " + task.getId());
+                } catch (Exception ex) {
+                    // If assignment already exists, ignore (it might have been created before)
+                    System.out.println("DEBUG: Assignment may already exist for this task: " + ex.getMessage());
+                }
+            }
+            
             saved = true;
             close();
         } catch (SQLException e) {

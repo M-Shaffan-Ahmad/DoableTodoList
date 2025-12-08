@@ -1,0 +1,100 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.geometry.Insets?>
+<?import javafx.scene.control.*?>
+<?import javafx.scene.layout.*?>
+<?import javafx.scene.text.Font?>
+
+<BorderPane xmlns="http://javafx.com/javafx/21" xmlns:fx="http://javafx.com/fxml/1" fx:controller="com.doable.controller.AdminDashboardController">
+    <!-- Top Bar -->
+    <top>
+        <HBox spacing="20" style="-fx-background-color: #1f2937; -fx-text-fill: white;" alignment="CENTER_LEFT">
+            <padding>
+                <Insets bottom="15" left="20" right="20" top="15"/>
+            </padding>
+            <Label text="Admin Dashboard" style="-fx-text-fill: white;" textFill="WHITE">
+                <font>
+                    <Font name="System Bold" size="18"/>
+                </font>
+            </Label>
+            <Separator orientation="VERTICAL"/>
+            <Label fx:id="welcomeLabel" style="-fx-text-fill: white;" textFill="WHITE">
+                <font>
+                    <Font size="12"/>
+                </font>
+            </Label>
+            <Region HBox.hgrow="ALWAYS"/>
+            <Button text="📊 Reports" onAction="#onGenerateManagersReport" style="-fx-font-size: 11; -fx-padding: 8 12; -fx-background-color: #10b981; -fx-text-fill: white;" prefHeight="30"/>
+            <Button fx:id="logoutButton" text="Logout" style="-fx-font-size: 11;" prefHeight="30"/>
+        </HBox>
+    </top>
+
+    <!-- Main Content -->
+    <center>
+        <VBox spacing="20" style="-fx-background-color: #f3f4f6;">
+            <padding>
+                <Insets bottom="20" left="20" right="20" top="20"/>
+            </padding>
+
+            <!-- Section: Create Manager -->
+            <VBox spacing="15" style="-fx-border-color: #e5e7eb; -fx-border-width: 1; -fx-background-color: white; -fx-padding: 20;">
+                <Label text="Create Manager" style="-fx-font-weight: bold; -fx-font-size: 16;"/>
+
+                <HBox spacing="10">
+                    <!-- Username -->
+                    <VBox spacing="5" HBox.hgrow="ALWAYS">
+                        <Label text="Username:" style="-fx-font-weight: bold; -fx-font-size: 11;"/>
+                        <TextField fx:id="managerUsername" promptText="Manager username" prefHeight="35"/>
+                    </VBox>
+
+                    <!-- Password -->
+                    <VBox spacing="5" HBox.hgrow="ALWAYS">
+                        <Label text="Password:" style="-fx-font-weight: bold; -fx-font-size: 11;"/>
+                        <PasswordField fx:id="managerPassword" promptText="Manager password" prefHeight="35"/>
+                    </VBox>
+
+                    <!-- Email -->
+                    <VBox spacing="5" HBox.hgrow="ALWAYS">
+                        <Label text="Email:" style="-fx-font-weight: bold; -fx-font-size: 11;"/>
+                        <TextField fx:id="managerEmail" promptText="Email" prefHeight="35"/>
+                    </VBox>
+
+                    <!-- Phone -->
+                    <VBox spacing="5" HBox.hgrow="ALWAYS">
+                        <Label text="Phone:" style="-fx-font-weight: bold; -fx-font-size: 11;"/>
+                        <TextField fx:id="managerPhone" promptText="Phone number" prefHeight="35"/>
+                    </VBox>
+
+                    <!-- Department -->
+                    <VBox spacing="5" HBox.hgrow="ALWAYS">
+                        <Label text="Department:" style="-fx-font-weight: bold; -fx-font-size: 11;"/>
+                        <TextField fx:id="managerDepartment" promptText="Department" prefHeight="35"/>
+                    </VBox>
+
+                    <!-- Create Button -->
+                    <VBox alignment="BOTTOM_CENTER" spacing="5">
+                        <Button fx:id="createManagerButton" text="Create Manager" prefHeight="35" style="-fx-font-weight: bold; -fx-background-color: #10b981; -fx-text-fill: white;"/>
+                    </VBox>
+                </HBox>
+
+                <Label fx:id="managerErrorLabel" textFill="#ef4444" wrapText="true"/>
+                <Label fx:id="managerSuccessLabel" textFill="#10b981" wrapText="true"/>
+            </VBox>
+
+            <!-- Section: View All Managers -->
+            <VBox spacing="15" style="-fx-border-color: #e5e7eb; -fx-border-width: 1; -fx-background-color: white; -fx-padding: 20;">
+                <Label text="All Managers" style="-fx-font-weight: bold; -fx-font-size: 16;"/>
+                <TableView fx:id="managersTable" prefHeight="200">
+                    <columns>
+                        <TableColumn text="ID" prefWidth="50"/>
+                        <TableColumn text="Username" prefWidth="120"/>
+                        <TableColumn text="Email" prefWidth="150"/>
+                        <TableColumn text="Phone" prefWidth="120"/>
+                        <TableColumn text="Department" prefWidth="150"/>
+                        <TableColumn text="Created" prefWidth="150"/>
+                    </columns>
+                </TableView>
+            </VBox>
+        </VBox>
+    </center>
+</BorderPane>

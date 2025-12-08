@@ -124,8 +124,8 @@ public class SettingsController {
                     }
                 }
                 
-                // Create new category with default color
-                Category newCat = new Category(categoryName, "#3b82f6");
+                // Create new category
+                Category newCat = new Category(categoryName);
                 categoryDao.save(newCat);
                 loadCategories();
                 

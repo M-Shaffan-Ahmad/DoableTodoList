@@ -1,0 +1,64 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.geometry.Insets?>
+<?import javafx.scene.control.*?>
+<?import javafx.scene.layout.*?>
+<?import javafx.scene.text.Font?>
+
+<BorderPane xmlns="http://javafx.com/javafx/21" xmlns:fx="http://javafx.com/fxml/1" fx:controller="com.doable.controller.LoginController">
+    <center>
+        <VBox alignment="CENTER" spacing="20" style="-fx-background-color: #f3f4f6;">
+            <padding>
+                <Insets bottom="50" left="50" right="50" top="50"/>
+            </padding>
+
+            <!-- Title -->
+            <Label text="Doable - Login" textAlignment="CENTER">
+                <font>
+                    <Font name="System Bold" size="32"/>
+                </font>
+                <VBox.margin>
+                    <Insets bottom="30"/>
+                </VBox.margin>
+            </Label>
+
+            <!-- Login Form -->
+            <VBox spacing="15" style="-fx-border-color: #e5e7eb; -fx-border-width: 1; -fx-background-color: white;" prefWidth="400">
+                <padding>
+                    <Insets bottom="30" left="30" right="30" top="30"/>
+                </padding>
+
+                <Label text="Login" textAlignment="CENTER">
+                    <font>
+                        <Font name="System Bold" size="20"/>
+                    </font>
+                </Label>
+
+                <!-- Username -->
+                <VBox spacing="5">
+                    <Label text="Username:" style="-fx-font-weight: bold;"/>
+                    <TextField fx:id="usernameField" promptText="Enter your username" prefHeight="40"/>
+                </VBox>
+
+                <!-- Password -->
+                <VBox spacing="5">
+                    <Label text="Password:" style="-fx-font-weight: bold;"/>
+                    <PasswordField fx:id="passwordField" promptText="Enter your password" prefHeight="40"/>
+                </VBox>
+
+                <!-- Error Message -->
+                <Label fx:id="errorLabel" textFill="#ef4444" wrapText="true"/>
+
+                <!-- Login Button -->
+                <Button fx:id="loginButton" text="Login" prefHeight="40" prefWidth="1000" style="-fx-font-size: 14; -fx-font-weight: bold; -fx-background-color: #3b82f6; -fx-text-fill: white; -fx-cursor: hand;">
+                    <VBox.margin>
+                        <Insets top="10"/>
+                    </VBox.margin>
+                </Button>
+
+                <!-- Info -->
+                <Label text="Demo Admin: username='admin' password='123'" textAlignment="CENTER" style="-fx-text-fill: #6b7280; -fx-font-size: 11;"/>
+            </VBox>
+        </VBox>
+    </center>
+</BorderPane>

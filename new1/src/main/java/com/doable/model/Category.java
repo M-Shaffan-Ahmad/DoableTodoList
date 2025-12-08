@@ -3,19 +3,18 @@ package com.doable.model;
 public class Category {
     private long id;
     private String name;
-    private String color; // hex color code like #FF5733
+    private long createdBy; // Who created this category (user_id of creator)
+    private String createdByUsername; // Username of category creator
 
     public Category() {}
 
-    public Category(String name, String color) {
+    public Category(String name) {
         this.name = name;
-        this.color = color;
     }
     
-    public Category(long id, String name, String color) {
+    public Category(long id, String name) {
         this.id = id;
         this.name = name;
-        this.color = color;
     }
 
     public long getId() { return id; }
@@ -24,8 +23,11 @@ public class Category {
     public String getName() { return name; }
     public void setName(String name) { this.name = name; }
 
-    public String getColor() { return color; }
-    public void setColor(String color) { this.color = color; }
+    public long getCreatedBy() { return createdBy; }
+    public void setCreatedBy(long createdBy) { this.createdBy = createdBy; }
+
+    public String getCreatedByUsername() { return createdByUsername; }
+    public void setCreatedByUsername(String createdByUsername) { this.createdByUsername = createdByUsername; }
 
     @Override
     public String toString() { return name; }

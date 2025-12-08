@@ -12,6 +12,10 @@ public class Task {
     private long categoryId; // nullable
     private String categoryName; // nullable
     private boolean markedForCompletion; // Track if task is checked for completion (to suppress reminders)
+    private long userId; // Task owner
+    private long createdBy; // Who created this task (user_id of creator, can be different from userId)
+    private String createdByUsername; // Username of task creator
+    private String assignmentType; // "PERSONAL" for self-created, "MANAGER" for manager-assigned
 
     public Task() {}
 
@@ -46,6 +50,14 @@ public class Task {
     public void setCategoryName(String categoryName) { this.categoryName = categoryName; }
     public boolean isMarkedForCompletion() { return markedForCompletion; }
     public void setMarkedForCompletion(boolean markedForCompletion) { this.markedForCompletion = markedForCompletion; }
+    public long getUserId() { return userId; }
+    public void setUserId(long userId) { this.userId = userId; }
+    public long getCreatedBy() { return createdBy; }
+    public void setCreatedBy(long createdBy) { this.createdBy = createdBy; }
+    public String getCreatedByUsername() { return createdByUsername; }
+    public void setCreatedByUsername(String createdByUsername) { this.createdByUsername = createdByUsername; }
+    public String getAssignmentType() { return assignmentType; }
+    public void setAssignmentType(String assignmentType) { this.assignmentType = assignmentType; }
 
     @Override
     public String toString() {

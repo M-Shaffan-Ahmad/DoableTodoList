@@ -1,0 +1,342 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.geometry.Insets?>
+<?import javafx.scene.control.*?>
+<?import javafx.scene.layout.*?>
+<?import javafx.scene.text.Font?>
+<?import javafx.collections.FXCollections?>
+
+<BorderPane xmlns="http://javafx.com/javafx/21" xmlns:fx="http://javafx.com/fxml/1" fx:controller="com.doable.controller.ManagerDashboardController">
+    <!-- Top Bar -->
+    <top>
+        <HBox spacing="20" style="-fx-background-color: #1f2937; -fx-text-fill: white;" alignment="CENTER_LEFT">
+            <padding>
+                <Insets bottom="15" left="20" right="20" top="15"/>
+            </padding>
+            <Label text="Manager Dashboard" style="-fx-text-fill: white;" textFill="WHITE">
+                <font>
+                    <Font name="System Bold" size="18"/>
+                </font>
+            </Label>
+            <Separator orientation="VERTICAL"/>
+            <Label fx:id="welcomeLabel" style="-fx-text-fill: white;" textFill="WHITE">
+                <font>
+                    <Font size="12"/>
+                </font>
+            </Label>
+            <Region HBox.hgrow="ALWAYS"/>
+            <Button text="📊 Report" onAction="#onGenerateReport" style="-fx-font-size: 11; -fx-padding: 8 12; -fx-background-color: #10b981; -fx-text-fill: white;" prefHeight="30"/>
+            <Button fx:id="logoutButton" text="Logout" style="-fx-font-size: 11;" prefHeight="30"/>
+        </HBox>
+    </top>
+
+    <!-- Main Content with Tabs -->
+    <center>
+        <TabPane tabClosingPolicy="UNAVAILABLE" style="-fx-background-color: #f3f4f6;">
+            <!-- Tab 1: Employee Management -->
+            <Tab text="Employees">
+                <VBox spacing="20" style="-fx-background-color: #f3f4f6;">
+                    <padding>
+                        <Insets bottom="20" left="20" right="20" top="20"/>
+                    </padding>
+
+                    <!-- Section: Create Employee -->
+                    <VBox spacing="15" style="-fx-border-color: #e5e7eb; -fx-border-width: 1; -fx-background-color: white; -fx-padding: 20;">
+                        <Label text="Create Employee" style="-fx-font-weight: bold; -fx-font-size: 16;"/>
+
+                        <HBox spacing="10">
+                            <!-- Username -->
+                            <VBox spacing="5" HBox.hgrow="ALWAYS">
+                                <Label text="Username:" style="-fx-font-weight: bold; -fx-font-size: 11;"/>
+                                <TextField fx:id="employeeUsername" promptText="Employee username" prefHeight="35"/>
+                            </VBox>
+
+                            <!-- Password -->
+                            <VBox spacing="5" HBox.hgrow="ALWAYS">
+                                <Label text="Password:" style="-fx-font-weight: bold; -fx-font-size: 11;"/>
+                                <PasswordField fx:id="employeePassword" promptText="Employee password" prefHeight="35"/>
+                            </VBox>
+
+                            <!-- Email -->
+                            <VBox spacing="5" HBox.hgrow="ALWAYS">
+                                <Label text="Email:" style="-fx-font-weight: bold; -fx-font-size: 11;"/>
+                                <TextField fx:id="employeeEmail" promptText="Email" prefHeight="35"/>
+                            </VBox>
+
+                            <!-- Phone -->
+                            <VBox spacing="5" HBox.hgrow="ALWAYS">
+                                <Label text="Phone:" style="-fx-font-weight: bold; -fx-font-size: 11;"/>
+                                <TextField fx:id="employeePhone" promptText="Phone number" prefHeight="35"/>
+                            </VBox>
+
+                            <!-- Job Title -->
+                            <VBox spacing="5" HBox.hgrow="ALWAYS">
+                                <Label text="Job Title:" style="-fx-font-weight: bold; -fx-font-size: 11;"/>
+                                <TextField fx:id="employeeJobTitle" promptText="Job title" prefHeight="35"/>
+                            </VBox>
+
+                            <!-- Create Button -->
+                            <VBox alignment="BOTTOM_CENTER" spacing="5">
+                                <Button fx:id="createEmployeeButton" text="Create Employee" prefHeight="35" style="-fx-font-weight: bold; -fx-background-color: #10b981; -fx-text-fill: white;"/>
+                            </VBox>
+                        </HBox>
+
+                        <Label fx:id="employeeErrorLabel" textFill="#ef4444" wrapText="true"/>
+                        <Label fx:id="employeeSuccessLabel" textFill="#10b981" wrapText="true"/>
+                    </VBox>
+
+                    <!-- Section: View All Employees -->
+                    <VBox spacing="15" style="-fx-border-color: #e5e7eb; -fx-border-width: 1; -fx-background-color: white; -fx-padding: 20;">
+                        <Label text="My Employees" style="-fx-font-weight: bold; -fx-font-size: 16;"/>
+                        <TableView fx:id="employeesTable" prefHeight="250">
+                            <columns>
+                                <TableColumn text="ID" prefWidth="50"/>
+                                <TableColumn text="Username" prefWidth="120"/>
+                                <TableColumn text="Email" prefWidth="150"/>
+                                <TableColumn text="Phone" prefWidth="120"/>
+                                <TableColumn text="Job Title" prefWidth="150"/>
+                                <TableColumn text="Created" prefWidth="150"/>
+                            </columns>
+                        </TableView>
+                    </VBox>
+                </VBox>
+            </Tab>
+
+            <!-- Tab 2: Task Management -->
+            <Tab text="Tasks">
+                <ScrollPane fitToWidth="true" style="-fx-background-color: #f3f4f6;">
+                    <VBox spacing="20" style="-fx-background-color: #f3f4f6;">
+                        <padding>
+                            <Insets bottom="20" left="20" right="20" top="20"/>
+                        </padding>
+
+                        <!-- Create Task Section -->
+                        <VBox spacing="15" style="-fx-border-color: #e5e7eb; -fx-border-width: 1; -fx-background-color: white; -fx-padding: 20;">
+                            <Label text="Create Task" style="-fx-font-weight: bold; -fx-font-size: 16;"/>
+                        <!-- Task Title and Description -->
+                        <HBox spacing="10">
+                            <VBox spacing="5" HBox.hgrow="ALWAYS">
+                                <Label text="Task Title:" style="-fx-font-weight: bold; -fx-font-size: 11;"/>
+                                <TextField fx:id="taskTitle" promptText="Task title" prefHeight="35"/>
+                            </VBox>
+
+                            <VBox spacing="5" HBox.hgrow="ALWAYS">
+                                <Label text="Description:" style="-fx-font-weight: bold; -fx-font-size: 11;"/>
+                                <TextArea fx:id="taskDescription" promptText="Task description" prefHeight="35" wrapText="true" style="-fx-control-inner-background: white;"/>
+                            </VBox>
+                        </HBox>
+
+                        <!-- Category and Due Date -->
+                        <HBox spacing="10">
+                            <VBox spacing="5" HBox.hgrow="ALWAYS">
+                                <Label text="Category:" style="-fx-font-weight: bold; -fx-font-size: 11;"/>
+                                <ComboBox fx:id="taskCategoryCombo" prefHeight="35" promptText="Select category"/>
+                            </VBox>
+
+                            <VBox spacing="5" HBox.hgrow="ALWAYS">
+                                <Label text="Due Date:" style="-fx-font-weight: bold; -fx-font-size: 11;"/>
+                                <DatePicker fx:id="taskDatePicker" prefHeight="35" style="-fx-padding: 5; -fx-font-size: 11;"/>
+                            </VBox>
+
+                            <VBox spacing="5" HBox.hgrow="ALWAYS">
+                                <Label text="Due Time:" style="-fx-font-weight: bold; -fx-font-size: 11;"/>
+                                <HBox spacing="5">
+                                    <Spinner fx:id="taskHourSpinner" prefWidth="60" prefHeight="35" style="-fx-font-size: 11;"/>
+                                    <Label text=":" style="-fx-font-size: 11;"/>
+                                    <Spinner fx:id="taskMinuteSpinner" prefWidth="60" prefHeight="35" style="-fx-font-size: 11;"/>
+                                    <ComboBox fx:id="taskAmpmCombo" prefWidth="70" prefHeight="35" style="-fx-font-size: 11;"/>
+                                </HBox>
+                            </VBox>
+                        </HBox>
+
+                        <!-- Repeat Options -->
+                        <VBox spacing="8">
+                            <Label text="Repeat:" style="-fx-font-weight: bold; -fx-font-size: 11;"/>
+                            <HBox spacing="10">
+                                <ToggleButton text="Daily" style="-fx-padding: 5 10; -fx-font-size: 10;" fx:id="taskRepeatDaily"/>
+                                <ToggleButton text="Weekly" style="-fx-padding: 5 10; -fx-font-size: 10;" fx:id="taskRepeatWeekly"/>
+                                <ToggleButton text="Monthly" style="-fx-padding: 5 10; -fx-font-size: 10;" fx:id="taskRepeatMonthly"/>
+                                <ToggleButton text="Custom" style="-fx-padding: 5 10; -fx-font-size: 10;" fx:id="taskRepeatCustom"/>
+                                <Label text="No repeat" style="-fx-font-size: 11; -fx-text-fill: #9ca3af;" fx:id="taskNoRepeatLabel"/>
+                            </HBox>
+                        </VBox>
+
+                        <!-- Reminder and Create Button -->
+                        <HBox spacing="10" alignment="CENTER_LEFT">
+                            <Button text="Set Reminder" fx:id="taskSetReminderButton" style="-fx-padding: 8 16; -fx-font-size: 11; -fx-background-color: #8b5cf6; -fx-text-fill: white; -fx-font-weight: bold;"/>
+                            <Label text="No reminder set" style="-fx-font-size: 10; -fx-text-fill: #9ca3af;" fx:id="taskReminderLabel"/>
+                            <Region HBox.hgrow="ALWAYS"/>
+                            <Button fx:id="createTaskButton" text="Create Task" prefHeight="35" style="-fx-font-weight: bold; -fx-background-color: #3b82f6; -fx-text-fill: white;"/>
+                        </HBox>
+
+                        <Label fx:id="taskErrorLabel" textFill="#ef4444" wrapText="true"/>
+                        <Label fx:id="taskSuccessLabel" textFill="#10b981" wrapText="true"/>
+                        </VBox>
+
+                        <!-- My Created Tasks List -->
+                        <VBox spacing="15" style="-fx-border-color: #e5e7eb; -fx-border-width: 1; -fx-background-color: white; -fx-padding: 20;">
+                            <Label text="My Created Tasks" style="-fx-font-weight: bold; -fx-font-size: 16;"/>
+                            <HBox spacing="10">
+                                <VBox spacing="5" HBox.hgrow="ALWAYS">
+                                    <Label text="Filter by Category:" style="-fx-font-weight: bold; -fx-font-size: 11;"/>
+                                    <ComboBox fx:id="filterCreatedTasksCategoryCombo" prefHeight="35" promptText="All Categories"/>
+                                </VBox>
+                            </HBox>
+                            <TableView fx:id="createdTasksTable" prefHeight="250">
+                                <columns>
+                                <TableColumn text="ID" prefWidth="40"/>
+                                <TableColumn text="Title" prefWidth="150"/>
+                                <TableColumn text="Description" prefWidth="180"/>
+                                <TableColumn text="Category" prefWidth="100"/>
+                                <TableColumn text="Due Date" prefWidth="120"/>
+                                <TableColumn text="Status" prefWidth="80"/>
+                                <TableColumn text="Actions" prefWidth="150"/>
+                            </columns>
+                        </TableView>
+                        </VBox>
+
+                        <!-- Assign Task Section -->
+                        <VBox spacing="15" style="-fx-border-color: #e5e7eb; -fx-border-width: 1; -fx-background-color: white; -fx-padding: 20;">
+                            <Label text="Assign Task to Employee(s)" style="-fx-font-weight: bold; -fx-font-size: 16;"/>
+
+                            <HBox spacing="10">
+                                <VBox spacing="5" HBox.hgrow="ALWAYS">
+                                    <Label text="Filter by Category:" style="-fx-font-weight: bold; -fx-font-size: 11;"/>
+                                    <ComboBox fx:id="filterTaskCategoryCombo" prefHeight="35" promptText="All Categories"/>
+                                </VBox>
+                            </HBox>
+
+                            <HBox spacing="10">
+                                <VBox spacing="5" HBox.hgrow="ALWAYS">
+                                    <Label text="Enter Task ID:" style="-fx-font-weight: bold; -fx-font-size: 11;"/>
+                                    <TextField fx:id="assignTaskIdInput" prefHeight="35" promptText="Type task ID here"/>
+                                </VBox>
+                                
+                                <VBox spacing="5" HBox.hgrow="ALWAYS">
+                                    <Label text="Or Select Task (by ID):" style="-fx-font-weight: bold; -fx-font-size: 11;"/>
+                                    <ComboBox fx:id="assignTaskCombo" prefHeight="35" promptText="Select task"/>
+                                </VBox>
+
+                                <VBox spacing="5" HBox.hgrow="ALWAYS">
+                                    <Label text="Assign To:" style="-fx-font-weight: bold; -fx-font-size: 11;"/>
+                                    <HBox spacing="5">
+                                        <RadioButton fx:id="assignAllRadio" text="All Employees" toggleGroup="$assignGroup"/>
+                                        <RadioButton fx:id="assignSelectedRadio" text="Selected" toggleGroup="$assignGroup"/>
+                                    </HBox>
+                                </VBox>
+
+                                <VBox spacing="5" HBox.hgrow="ALWAYS">
+                                    <Label text="Employees:" style="-fx-font-weight: bold; -fx-font-size: 11;"/>
+                                    <ComboBox fx:id="assignEmployeeCombo" prefHeight="35" promptText="Select employee" disable="true"/>
+                                </VBox>
+
+                                <VBox alignment="BOTTOM_CENTER" spacing="5">
+                                    <Button fx:id="assignTaskButton" text="Assign Task" prefHeight="35" style="-fx-font-weight: bold; -fx-background-color: #f59e0b; -fx-text-fill: white;"/>
+                                </VBox>
+                            </HBox>
+
+                            <Label fx:id="assignErrorLabel" textFill="#ef4444" wrapText="true"/>
+                            <Label fx:id="assignSuccessLabel" textFill="#10b981" wrapText="true"/>
+                        </VBox>
+                    </VBox>
+                </ScrollPane>
+            </Tab>
+
+            <!-- Tab 3: Categories -->
+            <Tab text="Categories">
+                <VBox spacing="20" style="-fx-background-color: #f3f4f6;">
+                    <padding>
+                        <Insets bottom="20" left="20" right="20" top="20"/>
+                    </padding>
+
+                    <!-- Create Category Section -->
+                    <VBox spacing="15" style="-fx-border-color: #e5e7eb; -fx-border-width: 1; -fx-background-color: white; -fx-padding: 20;">
+                        <Label text="Create Category" style="-fx-font-weight: bold; -fx-font-size: 16;"/>
+
+                        <HBox spacing="10">
+                            <VBox spacing="5" HBox.hgrow="ALWAYS">
+                                <Label text="Category Name:" style="-fx-font-weight: bold; -fx-font-size: 11;"/>
+                                <TextField fx:id="categoryName" promptText="Category name" prefHeight="35"/>
+                            </VBox>
+
+                            <VBox alignment="BOTTOM_CENTER" spacing="5">
+                                <Button fx:id="createCategoryButton" text="Create Category" prefHeight="35" style="-fx-font-weight: bold; -fx-background-color: #8b5cf6; -fx-text-fill: white;"/>
+                            </VBox>
+                        </HBox>
+
+                        <Label fx:id="categoryErrorLabel" textFill="#ef4444" wrapText="true"/>
+                        <Label fx:id="categorySuccessLabel" textFill="#10b981" wrapText="true"/>
+                    </VBox>
+
+                    <!-- Categories List -->
+                    <VBox spacing="15" style="-fx-border-color: #e5e7eb; -fx-border-width: 1; -fx-background-color: white; -fx-padding: 20;">
+                        <Label text="My Created Categories" style="-fx-font-weight: bold; -fx-font-size: 16;"/>
+                        <TableView fx:id="categoriesTable" prefHeight="300">
+                            <columns>
+                                <TableColumn text="ID" prefWidth="50"/>
+                                <TableColumn text="Name" prefWidth="150"/>
+                                <TableColumn text="Color" prefWidth="100"/>
+                                <TableColumn text="Created" prefWidth="150"/>
+                            </columns>
+                        </TableView>
+                    </VBox>
+                </VBox>
+            </Tab>
+
+            <!-- Tab 4: Task Progress -->
+            <Tab text="Task Progress">
+                <VBox spacing="20" style="-fx-background-color: #f3f4f6;">
+                    <padding>
+                        <Insets bottom="20" left="20" right="20" top="20"/>
+                    </padding>
+
+                    <!-- Filters -->
+                    <VBox spacing="10" style="-fx-border-color: #e5e7eb; -fx-border-width: 1; -fx-background-color: white; -fx-padding: 15;">
+                        <Label text="Filters" style="-fx-font-weight: bold; -fx-font-size: 14;"/>
+                        <HBox spacing="15">
+                            <VBox spacing="5" HBox.hgrow="ALWAYS">
+                                <Label text="Employee:" style="-fx-font-weight: bold; -fx-font-size: 11;"/>
+                                <ComboBox fx:id="filterEmployeeCombo" prefHeight="35" promptText="All employees"/>
+                            </VBox>
+
+                            <VBox spacing="5" HBox.hgrow="ALWAYS">
+                                <Label text="Task:" style="-fx-font-weight: bold; -fx-font-size: 11;"/>
+                                <ComboBox fx:id="filterTaskCombo" prefHeight="35" promptText="All tasks"/>
+                            </VBox>
+
+                            <VBox spacing="5" HBox.hgrow="ALWAYS">
+                                <Label text="Category:" style="-fx-font-weight: bold; -fx-font-size: 11;"/>
+                                <ComboBox fx:id="filterCategoryCombo" prefHeight="35" promptText="All categories"/>
+                            </VBox>
+
+                            <VBox spacing="5" HBox.hgrow="ALWAYS">
+                                <Label text="Status:" style="-fx-font-weight: bold; -fx-font-size: 11;"/>
+                                <ComboBox fx:id="filterStatusCombo" prefHeight="35" promptText="All statuses"/>
+                            </VBox>
+
+                            <VBox alignment="BOTTOM_CENTER" spacing="5">
+                                <Button fx:id="applyFiltersButton" text="Apply Filters" prefHeight="35" style="-fx-font-weight: bold; -fx-background-color: #06b6d4; -fx-text-fill: white;"/>
+                                <Button fx:id="clearFiltersButton" text="Clear" prefHeight="35" style="-fx-font-weight: bold; -fx-background-color: #6b7280; -fx-text-fill: white;"/>
+                            </VBox>
+                        </HBox>
+                    </VBox>
+
+                    <!-- Task Progress Table -->
+                    <VBox spacing="15" style="-fx-border-color: #e5e7eb; -fx-border-width: 1; -fx-background-color: white; -fx-padding: 20;">
+                        <Label text="Task Progress Tracking" style="-fx-font-weight: bold; -fx-font-size: 16;"/>
+                        <TableView fx:id="progressTable" prefHeight="400">
+                            <columns>
+                                <TableColumn text="Employee" prefWidth="150"/>
+                                <TableColumn text="Task Title" prefWidth="200"/>
+                                <TableColumn text="Category" prefWidth="100"/>
+                                <TableColumn text="Status" prefWidth="100"/>
+                                <TableColumn text="Progress" prefWidth="80"/>
+                                <TableColumn text="Assigned Date" prefWidth="150"/>
+                            </columns>
+                        </TableView>
+                    </VBox>
+                </VBox>
+            </Tab>
+        </TabPane>
+    </center>
+</BorderPane>

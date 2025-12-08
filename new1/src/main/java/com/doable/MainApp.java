@@ -14,12 +14,11 @@ public class MainApp extends Application {
 public void start(Stage primaryStage) throws Exception {
     Database.getInstance().init();
 
-    // CORRECT WAY: Create a new instance, then load.
-    // This allows you to get the controller later if needed.
-    FXMLLoader loader = new FXMLLoader(getClass().getResource("/fxml/home.fxml"));
+    // Load login screen first
+    FXMLLoader loader = new FXMLLoader(getClass().getResource("/fxml/login.fxml"));
     Parent root = loader.load();
 
-    primaryStage.setTitle("Doable Todo List");
+    primaryStage.setTitle("Doable - Login");
 
     // Icon loading (ensure app_icon.png is in src/main/resources/)
     try {
@@ -28,7 +27,7 @@ public void start(Stage primaryStage) throws Exception {
         System.out.println("Icon not found: " + e.getMessage());
     }
 
-    primaryStage.setScene(new Scene(root, 900, 600));
+    primaryStage.setScene(new Scene(root, 800, 600));
     primaryStage.show();
 }
 
