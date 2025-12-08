@@ -20,9 +20,8 @@ public class Database {
         try {
             String url = "jdbc:sqlite:doable.db";
             conn = DriverManager.getConnection(url);
-            System.out.println("DEBUG: Connected to SQLite database");
             try (Statement s = conn.createStatement()) {
-                // Create unified users table for all roles
+                // Create users table
                 s.execute("CREATE TABLE IF NOT EXISTS users (" +
                         "id INTEGER PRIMARY KEY AUTOINCREMENT, " +
                         "username TEXT NOT NULL UNIQUE, " +
@@ -33,70 +32,15 @@ public class Database {
                         "department TEXT, " +
                         "job_title TEXT, " +
                         "created_by INTEGER, " +
-                        "created_at INTEGER)");
-                System.out.println("DEBUG: Users table created/verified");
-                
-                // Create admin users table
-                s.execute("CREATE TABLE IF NOT EXISTS admin_users (" +
-                        "id INTEGER PRIMARY KEY AUTOINCREMENT, " +
-                        "username TEXT NOT NULL UNIQUE, " +
-                        "password TEXT NOT NULL, " +
-                        "email TEXT NOT NULL, " +
-                        "phone_number TEXT NOT NULL, " +
-                        "created_at INTEGER)");
-                
-                // Create manager users table
-                s.execute("CREATE TABLE IF NOT EXISTS manager_users (" +
-                        "id INTEGER PRIMARY KEY AUTOINCREMENT, " +
-                        "username TEXT NOT NULL UNIQUE, " +
-                        "password TEXT NOT NULL, " +
-                        "email TEXT NOT NULL, " +
-                        "phone_number TEXT NOT NULL, " +
-                        "department TEXT, " +
-                        "admin_id INTEGER, " +
                         "created_at INTEGER, " +
-                        "FOREIGN KEY(admin_id) REFERENCES admin_users(id))");
+                        "FOREIGN KEY(created_by) REFERENCES users(id))");
                 
-                // Create employee users table
-                s.execute("CREATE TABLE IF NOT EXISTS employee_users (" +
-                        "id INTEGER PRIMARY KEY AUTOINCREMENT, " +
-                        "username TEXT NOT NULL UNIQUE, " +
-                        "password TEXT NOT NULL, " +
-                        "email TEXT NOT NULL, " +
-                        "phone_number TEXT NOT NULL, " +
-                        "job_title TEXT, " +
-                        "manager_id INTEGER, " +
-                        "created_at INTEGER, " +
-                        "FOREIGN KEY(manager_id) REFERENCES manager_users(id))");
-                
-                // Initialize default users if not exists
-                try (ResultSet rs = s.executeQuery("SELECT COUNT(*) FROM users")) {
+                // Initialize admin user if not exists
+                try (ResultSet rs = s.executeQuery("SELECT COUNT(*) FROM users WHERE role = 'ADMIN'")) {
                     if (rs.next() && rs.getInt(1) == 0) {
-                        System.out.println("DEBUG: Creating default users");
-                        
-                        // Create admin user
-                        s.execute("INSERT INTO admin_users (username, password, email, phone_number, created_at) " +
-                                "VALUES ('admin', '123', 'admin@company.com', '0000000000', " + System.currentTimeMillis() + ")");
+                        // Create default admin: username='admin', password='123'
                         s.execute("INSERT INTO users (username, password, email, phone_number, role, created_at) " +
                                 "VALUES ('admin', '123', 'admin@company.com', '0000000000', 'ADMIN', " + System.currentTimeMillis() + ")");
-                        System.out.println("DEBUG: Admin user created");
-                        
-                        // Create manager user
-                        s.execute("INSERT INTO manager_users (username, password, email, phone_number, department, created_at) " +
-                                "VALUES ('manager', '123', 'manager@company.com', '1111111111', 'IT', " + System.currentTimeMillis() + ")");
-                        s.execute("INSERT INTO users (username, password, email, phone_number, role, department, created_at) " +
-                                "VALUES ('manager', '123', 'manager@company.com', '1111111111', 'MANAGER', 'IT', " + System.currentTimeMillis() + ")");
-                        System.out.println("DEBUG: Manager user created");
-                        
-                        // Create employee user
-                        s.execute("INSERT INTO employee_users (username, password, email, phone_number, job_title, created_at) " +
-                                "VALUES ('employee', '123', 'employee@company.com', '2222222222', 'Developer', " + System.currentTimeMillis() + ")");
-                        s.execute("INSERT INTO users (username, password, email, phone_number, role, job_title, created_at) " +
-                                "VALUES ('employee', '123', 'employee@company.com', '2222222222', 'EMPLOYEE', 'Developer', " + System.currentTimeMillis() + ")");
-                        System.out.println("DEBUG: Employee user created");
-                        
-                    } else {
-                        System.out.println("DEBUG: Default users already exist");
                     }
                 }
                 
@@ -104,55 +48,92 @@ public class Database {
                 s.execute("CREATE TABLE IF NOT EXISTS categories ("+
                         "id INTEGER PRIMARY KEY AUTOINCREMENT, "+
                         "name TEXT NOT NULL UNIQUE, "+
-                        "created_by INTEGER)");
+                        "created_by INTEGER, " +
+                        "FOREIGN KEY(created_by) REFERENCES users(id))");
                 
-                // Create unified tasks table
-                s.execute("CREATE TABLE IF NOT EXISTS tasks (" +
-                        "id INTEGER PRIMARY KEY AUTOINCREMENT, " +
-                        "title TEXT NOT NULL, " +
-                        "description TEXT, " +
-                        "due TEXT, " +
-                        "completed INTEGER DEFAULT 0, " +
-                        "repeat_rule TEXT DEFAULT 'NONE', " +
-                        "category_id INTEGER, " +
-                        "marked_for_completion INTEGER DEFAULT 0, " +
+                // Create tasks table with category_id
+                s.execute("CREATE TABLE IF NOT EXISTS tasks ("+
+                        "id INTEGER PRIMARY KEY AUTOINCREMENT, "+
+                        "title TEXT NOT NULL, "+
+                        "description TEXT, "+
+                        "due TEXT, "+
+                        "completed INTEGER DEFAULT 0, "+
+                        "repeat_rule TEXT DEFAULT 'NONE', "+
+                        "category_id INTEGER, "+
                         "user_id INTEGER, " +
                         "created_by INTEGER, " +
-                        "assignment_type TEXT DEFAULT 'PERSONAL', " +
-                        "FOREIGN KEY(category_id) REFERENCES categories(id))");
-                
-                // Create manager_tasks table
-                s.execute("CREATE TABLE IF NOT EXISTS manager_tasks ("+
-                        "id INTEGER PRIMARY KEY AUTOINCREMENT, "+
-                        "title TEXT NOT NULL, "+
-                        "description TEXT, "+
-                        "due TEXT, "+
-                        "completed INTEGER DEFAULT 0, "+
-                        "repeat_rule TEXT DEFAULT 'NONE', "+
-                        "category_id INTEGER, "+
-                        "created_by_manager_id INTEGER NOT NULL, " +
-                        "created_date INTEGER, " +
-                        "due_date INTEGER, " +
-                        "marked_for_completion INTEGER DEFAULT 0, " +
                         "FOREIGN KEY(category_id) REFERENCES categories(id), " +
-                        "FOREIGN KEY(created_by_manager_id) REFERENCES manager_users(id))");
+                        "FOREIGN KEY(user_id) REFERENCES users(id), " +
+                        "FOREIGN KEY(created_by) REFERENCES users(id))");
                 
-                // Create employee_tasks table
-                s.execute("CREATE TABLE IF NOT EXISTS employee_tasks ("+
-                        "id INTEGER PRIMARY KEY AUTOINCREMENT, "+
-                        "title TEXT NOT NULL, "+
-                        "description TEXT, "+
-                        "due TEXT, "+
-                        "completed INTEGER DEFAULT 0, "+
-                        "repeat_rule TEXT DEFAULT 'NONE', "+
-                        "category_id INTEGER, "+
-                        "created_by_employee_id INTEGER NOT NULL, " +
-                        "created_date INTEGER, " +
-                        "due_date INTEGER, " +
-                        "marked_for_completion INTEGER DEFAULT 0, " +
-                        "FOREIGN KEY(category_id) REFERENCES categories(id), " +
-                        "FOREIGN KEY(created_by_employee_id) REFERENCES employee_users(id))");
+                // Check if columns exist, if not add them
+                try (ResultSet rs = s.executeQuery("PRAGMA table_info(tasks)")) {
+                    boolean hasCategory = false;
+                    boolean hasMarkedForCompletion = false;
+                    boolean hasUserId = false;
+                    boolean hasCreatedBy = false;
+                    boolean hasAssignmentType = false;
+                    boolean hasCreatedDate = false;
+                    boolean hasDueDate = false;
+                    while (rs.next()) {
+                        if ("category_id".equals(rs.getString("name"))) {
+                            hasCategory = true;
+                        }
+                        if ("marked_for_completion".equals(rs.getString("name"))) {
+                            hasMarkedForCompletion = true;
+                        }
+                        if ("user_id".equals(rs.getString("name"))) {
+                            hasUserId = true;
+                        }
+                        if ("created_by".equals(rs.getString("name"))) {
+                            hasCreatedBy = true;
+                        }
+                        if ("assignment_type".equals(rs.getString("name"))) {
+                            hasAssignmentType = true;
+                        }
+                        if ("created_date".equals(rs.getString("name"))) {
+                            hasCreatedDate = true;
+                        }
+                        if ("due_date".equals(rs.getString("name"))) {
+                            hasDueDate = true;
+                        }
+                    }
+                    if (!hasCategory) {
+                        s.execute("ALTER TABLE tasks ADD COLUMN category_id INTEGER");
+                    }
+                    if (!hasMarkedForCompletion) {
+                        s.execute("ALTER TABLE tasks ADD COLUMN marked_for_completion INTEGER DEFAULT 0");
+                    }
+                    if (!hasUserId) {
+                        s.execute("ALTER TABLE tasks ADD COLUMN user_id INTEGER");
+                    }
+                    if (!hasCreatedBy) {
+                        s.execute("ALTER TABLE tasks ADD COLUMN created_by INTEGER");
+                    }
+                    if (!hasAssignmentType) {
+                        s.execute("ALTER TABLE tasks ADD COLUMN assignment_type TEXT DEFAULT 'PERSONAL'");
+                    }
+                    if (!hasCreatedDate) {
+                        s.execute("ALTER TABLE tasks ADD COLUMN created_date INTEGER DEFAULT " + System.currentTimeMillis());
+                    }
+                    if (!hasDueDate) {
+                        s.execute("ALTER TABLE tasks ADD COLUMN due_date INTEGER");
+                    }
+                }
                 
+                // Check if categories table has created_by column
+                try (ResultSet rs = s.executeQuery("PRAGMA table_info(categories)")) {
+                    boolean hasCreatedBy = false;
+                    while (rs.next()) {
+                        if ("created_by".equals(rs.getString("name"))) {
+                            hasCreatedBy = true;
+                        }
+                    }
+                    if (!hasCreatedBy) {
+                        s.execute("ALTER TABLE categories ADD COLUMN created_by INTEGER");
+                    }
+                }
+
                 // Create assignments table to track task-employee relationships
                 s.execute("CREATE TABLE IF NOT EXISTS assignments (" +
                         "id INTEGER PRIMARY KEY AUTOINCREMENT, " +
@@ -161,123 +142,23 @@ public class Database {
                         "assigned_by INTEGER NOT NULL, " +
                         "assigned_at INTEGER, " +
                         "marked_for_completion INTEGER DEFAULT 0, " +
-                        "completed_at INTEGER DEFAULT 0, " +
-                        "FOREIGN KEY(task_id) REFERENCES manager_tasks(id), " +
-                        "FOREIGN KEY(employee_id) REFERENCES employee_users(id), " +
-                        "FOREIGN KEY(assigned_by) REFERENCES manager_users(id))");
+                        "completed_at INTEGER, " +
+                        "FOREIGN KEY(task_id) REFERENCES tasks(id), " +
+                        "FOREIGN KEY(employee_id) REFERENCES users(id), " +
+                        "FOREIGN KEY(assigned_by) REFERENCES users(id), " +
+                        "UNIQUE(task_id, employee_id))");
                 
                 // Create action_logs table to track user actions
                 s.execute("CREATE TABLE IF NOT EXISTS action_logs (" +
                         "id INTEGER PRIMARY KEY AUTOINCREMENT, " +
-                        "user_id INTEGER, " +
+                        "user_id INTEGER NOT NULL, " +
                         "action_type TEXT NOT NULL, " +
                         "description TEXT, " +
                         "timestamp INTEGER, " +
                         "FOREIGN KEY(user_id) REFERENCES users(id))");
             }
-            // Migrate old schema if needed
-            migrateAssignmentsTableSchema();
         } catch (SQLException e) {
             throw new RuntimeException(e);
-        }
-    }
-    
-    private void migrateAssignmentsTableSchema() {
-        try {
-            // Check if assignments table has the old schema
-            DatabaseMetaData dbMeta = conn.getMetaData();
-            ResultSet columns = dbMeta.getColumns(null, null, "assignments", null);
-            boolean hasOldSchema = false;
-            boolean hasMissingMarkedForCompletion = false;
-            
-            while (columns.next()) {
-                String columnName = columns.getString("COLUMN_NAME");
-                if ("manager_task_id".equals(columnName) || "assigned_by_manager_id".equals(columnName)) {
-                    hasOldSchema = true;
-                }
-                if ("marked_for_completion".equals(columnName)) {
-                    hasMissingMarkedForCompletion = false;
-                }
-            }
-            columns.close();
-            
-            if (hasOldSchema) {
-                System.out.println("DEBUG: Detected old assignments table schema, migrating...");
-                try (Statement s = conn.createStatement()) {
-                    // Create backup of old data
-                    s.execute("CREATE TABLE assignments_backup AS SELECT * FROM assignments");
-                    
-                    // Drop old table
-                    s.execute("DROP TABLE assignments");
-                    
-                    // Create new table with correct schema
-                    s.execute("CREATE TABLE assignments (" +
-                            "id INTEGER PRIMARY KEY AUTOINCREMENT, " +
-                            "task_id INTEGER NOT NULL, " +
-                            "employee_id INTEGER NOT NULL, " +
-                            "assigned_by INTEGER NOT NULL, " +
-                            "assigned_at INTEGER, " +
-                            "marked_for_completion INTEGER DEFAULT 0, " +
-                            "completed_at INTEGER DEFAULT 0, " +
-                            "FOREIGN KEY(task_id) REFERENCES manager_tasks(id), " +
-                            "FOREIGN KEY(employee_id) REFERENCES employee_users(id), " +
-                            "FOREIGN KEY(assigned_by) REFERENCES manager_users(id))");
-                    
-                    // Restore data with proper column mapping
-                    s.execute("INSERT INTO assignments (id, task_id, employee_id, assigned_by, assigned_at, completed_at) " +
-                            "SELECT id, COALESCE(manager_task_id, 0) as task_id, employee_id, assigned_by_manager_id, assigned_at, completed_at " +
-                            "FROM assignments_backup");
-                    
-                    // Drop backup table
-                    s.execute("DROP TABLE assignments_backup");
-                    
-                    System.out.println("DEBUG: Successfully migrated assignments table schema");
-                }
-            }
-            
-            // Migrate action_logs table if it has old schema
-            columns = dbMeta.getColumns(null, null, "action_logs", null);
-            boolean actionLogsHasOldSchema = false;
-            while (columns.next()) {
-                String columnName = columns.getString("COLUMN_NAME");
-                if ("admin_user_id".equals(columnName) || "manager_user_id".equals(columnName) || "employee_user_id".equals(columnName)) {
-                    actionLogsHasOldSchema = true;
-                }
-            }
-            columns.close();
-            
-            if (actionLogsHasOldSchema) {
-                System.out.println("DEBUG: Detected old action_logs table schema, migrating...");
-                try (Statement s = conn.createStatement()) {
-                    // Create backup of old data
-                    s.execute("CREATE TABLE action_logs_backup AS SELECT * FROM action_logs");
-                    
-                    // Drop old table
-                    s.execute("DROP TABLE action_logs");
-                    
-                    // Create new table with correct schema
-                    s.execute("CREATE TABLE action_logs (" +
-                            "id INTEGER PRIMARY KEY AUTOINCREMENT, " +
-                            "user_id INTEGER, " +
-                            "action_type TEXT NOT NULL, " +
-                            "description TEXT, " +
-                            "timestamp INTEGER, " +
-                            "FOREIGN KEY(user_id) REFERENCES users(id))");
-                    
-                    // Restore data with proper column mapping (use admin_user_id if available)
-                    s.execute("INSERT INTO action_logs (id, user_id, action_type, description, timestamp) " +
-                            "SELECT id, COALESCE(admin_user_id, manager_user_id, employee_user_id, 0) as user_id, action_type, description, timestamp " +
-                            "FROM action_logs_backup");
-                    
-                    // Drop backup table
-                    s.execute("DROP TABLE action_logs_backup");
-                    
-                    System.out.println("DEBUG: Successfully migrated action_logs table schema");
-                }
-            }
-        } catch (SQLException e) {
-            System.err.println("Migration warning (non-fatal): " + e.getMessage());
-            // Don't throw - if migration fails, continue with fresh table
         }
     }
 

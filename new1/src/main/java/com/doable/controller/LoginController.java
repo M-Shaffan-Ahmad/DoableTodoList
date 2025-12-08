@@ -10,7 +10,6 @@ import javafx.scene.control.PasswordField;
 import javafx.scene.control.TextField;
 import javafx.stage.Stage;
 import com.doable.model.User;
-import com.doable.model.UserRole;
 import com.doable.dao.UserDao;
 
 public class LoginController {
@@ -19,8 +18,7 @@ public class LoginController {
     @FXML private Button loginButton;
     @FXML private Label errorLabel;
 
-    private static Object currentUser;  // Can be Admin, Manager, or Employee
-    private static String currentRole;
+    private static User currentUser;
 
     @FXML
     public void initialize() {
@@ -36,9 +34,11 @@ public class LoginController {
             return;
         }
 
+        // Debug: show all users in database
         System.out.println("DEBUG: Login attempt for username: " + username);
-        
-        Object user = attemptLogin(username, password);
+        UserDao.getAllUsers();
+
+        User user = UserDao.authenticate(username, password);
         if (user != null) {
             currentUser = user;
             errorLabel.setText("");
@@ -49,54 +49,35 @@ public class LoginController {
         }
     }
 
-    private Object attemptLogin(String username, String password) {
-        // Use unified UserDao to authenticate against users table
-        User user = UserDao.authenticate(username, password);
-        if (user != null) {
-            System.out.println("DEBUG: User authenticated - " + user.getUsername() + " (Role: " + user.getRole() + ")");
-            currentRole = user.getRole().name();
-            return user;
-        }
-        
-        System.out.println("DEBUG: Authentication failed for username: " + username);
-        return null;
-    }
-
-    private void openMainWindow(Object user) {
+    private void openMainWindow(User user) {
         try {
-            // Cast to unified User object
-            User appUser = (User) user;
+            // Load appropriate controller based on user role
             Parent root = null;
             Object controller = null;
-            
-            System.out.println("DEBUG openMainWindow: User role = " + appUser.getRole());
-            
-            switch (appUser.getRole()) {
+
+            switch (user.getRole()) {
                 case ADMIN:
-                    System.out.println("DEBUG: Loading admin dashboard");
-                    FXMLLoader adminLoader = new FXMLLoader(getClass().getResource("/fxml/admin_dashboard.fxml"));
-                    root = adminLoader.load();
-                    controller = adminLoader.getController();
+                    FXMLLoader loader = new FXMLLoader(getClass().getResource("/fxml/admin_dashboard.fxml"));
+                    root = loader.load();
+                    controller = loader.getController();
                     if (controller instanceof AdminDashboardController) {
-                        ((AdminDashboardController) controller).setCurrentUser(appUser);
+                        ((AdminDashboardController) controller).setCurrentUser(user);
                     }
                     break;
                 case MANAGER:
-                    System.out.println("DEBUG: Loading manager dashboard");
                     FXMLLoader managerLoader = new FXMLLoader(getClass().getResource("/fxml/manager_dashboard.fxml"));
                     root = managerLoader.load();
                     controller = managerLoader.getController();
                     if (controller instanceof ManagerDashboardController) {
-                        ((ManagerDashboardController) controller).setCurrentUser(appUser);
+                        ((ManagerDashboardController) controller).setCurrentUser(user);
                     }
                     break;
                 case EMPLOYEE:
-                    System.out.println("DEBUG: Loading home/employee dashboard");
                     FXMLLoader homeLoader = new FXMLLoader(getClass().getResource("/fxml/home.fxml"));
                     root = homeLoader.load();
                     controller = homeLoader.getController();
                     if (controller instanceof HomeController) {
-                        ((HomeController) controller).setCurrentUser(appUser);
+                        ((HomeController) controller).setCurrentUser(user);
                     }
                     break;
             }
@@ -104,7 +85,7 @@ public class LoginController {
             if (root != null) {
                 Stage stage = (Stage) loginButton.getScene().getWindow();
                 stage.setScene(new Scene(root, 1000, 700));
-                stage.setTitle("Doable - " + currentRole);
+                stage.setTitle("Doable - " + user.getRole().getDisplayName());
                 stage.show();
             }
         } catch (Exception e) {
@@ -113,14 +94,9 @@ public class LoginController {
         }
     }
 
-    public static Object getCurrentUser() {
+    public static User getCurrentUser() {
         return currentUser;
     }
-
-    public static String getCurrentRole() {
-        return currentRole;
-    }
-
 
     public static void setCurrentUser(User user) {
         currentUser = user;

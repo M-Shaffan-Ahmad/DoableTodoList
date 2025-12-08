@@ -1,9 +1,7 @@
 C:\Users\me\Desktop\java\new1\src\main\java\com\doable\controller\ManagerDashboardController.java
 C:\Users\me\Desktop\java\new1\src\main\java\com\doable\model\Assignment.java
 C:\Users\me\Desktop\java\new1\src\main\java\com\doable\model\Task.java
-C:\Users\me\Desktop\java\new1\src\main\java\com\doable\dao\EmployeeTaskDao.java
 C:\Users\me\Desktop\java\new1\src\main\java\com\doable\controller\AddEditController.java
-C:\Users\me\Desktop\java\new1\src\main\java\com\doable\dao\ManagerUserDao.java
 C:\Users\me\Desktop\java\new1\src\main\java\com\doable\controller\HomeController.java
 C:\Users\me\Desktop\java\new1\src\main\java\com\doable\model\TaskReport.java
 C:\Users\me\Desktop\java\new1\src\main\java\com\doable\model\Category.java
@@ -13,11 +11,7 @@ C:\Users\me\Desktop\java\new1\src\main\java\com\doable\model\Employee.java
 C:\Users\me\Desktop\java\new1\src\main\java\com\doable\dao\CategoryDao.java
 C:\Users\me\Desktop\java\new1\src\main\java\com\doable\dao\UserDao.java
 C:\Users\me\Desktop\java\new1\src\main\java\com\doable\controller\AdminDashboardController.java
-C:\Users\me\Desktop\java\new1\src\main\java\com\doable\dao\AdminUserDao.java
-C:\Users\me\Desktop\java\new1\src\main\java\com\doable\dao\ManagerTaskDao.java
-C:\Users\me\Desktop\java\new1\src\main\java\com\doable\model\EmployeeTask.java
 C:\Users\me\Desktop\java\new1\src\main\java\com\doable\model\UserRole.java
-C:\Users\me\Desktop\java\new1\src\main\java\com\doable\model\ManagerTask.java
 C:\Users\me\Desktop\java\new1\src\main\java\com\doable\model\Manager.java
 C:\Users\me\Desktop\java\new1\src\main\java\com\doable\dao\ActionLogDao.java
 C:\Users\me\Desktop\java\new1\src\main\java\com\doable\controller\SettingsController.java
@@ -28,6 +22,5 @@ C:\Users\me\Desktop\java\new1\src\main\java\com\doable\MainApp.java
 C:\Users\me\Desktop\java\new1\src\main\java\com\doable\controller\LoginController.java
 C:\Users\me\Desktop\java\new1\src\main\java\com\doable\model\User.java
 C:\Users\me\Desktop\java\new1\src\main\java\com\doable\dao\TaskDao.java
-C:\Users\me\Desktop\java\new1\src\main\java\com\doable\dao\EmployeeUserDao.java
 C:\Users\me\Desktop\java\new1\src\main\java\com\doable\dao\ReportDao.java
 C:\Users\me\Desktop\java\new1\src\main\java\com\doable\model\ActionLog.java

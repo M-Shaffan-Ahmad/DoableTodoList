@@ -16,11 +16,9 @@ import com.doable.model.User;
 import com.doable.model.UserRole;
 import com.doable.model.Task;
 import com.doable.model.Category;
-import com.doable.model.Manager;
 import com.doable.dao.UserDao;
 import com.doable.dao.TaskDao;
 import com.doable.dao.CategoryDao;
-import com.doable.dao.ManagerUserDao;
 import javafx.stage.FileChooser;
 
 import java.nio.file.Files;
@@ -132,8 +130,7 @@ public class AdminDashboardController {
         DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm")
                 .withZone(ZoneId.systemDefault());
 
-        ManagerUserDao managerDao = new ManagerUserDao();
-        for (Manager manager : managerDao.findAll()) {
+        for (User manager : UserDao.getAllManagers()) {
             String created = Instant.ofEpochMilli(manager.getCreatedAt())
                     .atZone(ZoneId.systemDefault())
                     .format(formatter);
@@ -170,20 +167,11 @@ public class AdminDashboardController {
         }
 
         try {
-            // Check for duplicate username in unified users table
-            if (UserDao.findByUsername(username) != null) {
-                managerErrorLabel.setText("Username already exists");
-                managerSuccessLabel.setText("");
-                return;
-            }
-
-            // Create manager user using unified User model
             User manager = new User(username, password, email, phone, UserRole.MANAGER);
             manager.setDepartment(department);
             manager.setCreatedBy(currentUser.getId());
             manager.setCreatedAt(System.currentTimeMillis());
 
-            // Add to unified users table
             UserDao.createUser(manager);
 
             // Clear fields
@@ -198,10 +186,12 @@ public class AdminDashboardController {
 
             // Reload table
             loadManagers();
+        } catch (IllegalArgumentException e) {
+            managerErrorLabel.setText(e.getMessage());
+            managerSuccessLabel.setText("");
         } catch (Exception e) {
             managerErrorLabel.setText("Error: " + e.getMessage());
             managerSuccessLabel.setText("");
-            e.printStackTrace();
         }
     }
 

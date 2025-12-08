@@ -1,5 +1,4 @@
 com\doable\controller\ManagerDashboardController$2.class
-com\doable\model\ManagerTask.class
 com\doable\controller\HomeController$1.class
 com\doable\model\Task.class
 com\doable\controller\ManagerDashboardController.class
@@ -19,10 +18,7 @@ com\doable\dao\AssignmentDao.class
 com\doable\controller\ManagerDashboardController$ProgressRow.class
 com\doable\dao\TaskDao.class
 com\doable\controller\HomeController.class
-com\doable\dao\ManagerUserDao.class
-com\doable\dao\EmployeeTaskDao.class
 com\doable\MainApp.class
-com\doable\dao\AdminUserDao.class
 com\doable\controller\ManagerDashboardController$4.class
 com\doable\model\Employee.class
 com\doable\model\ActionLog.class
@@ -31,11 +27,9 @@ com\doable\model\User.class
 com\doable\model\Assignment.class
 com\doable\db\Database.class
 com\doable\model\Admin.class
-com\doable\dao\ManagerTaskDao.class
 com\doable\model\UserRole.class
 com\doable\model\TaskReport.class
 com\doable\controller\ManagerDashboardController$3.class
-com\doable\model\EmployeeTask.class
 com\doable\controller\AddEditController.class
 com\doable\controller\LoginController$1.class
 com\doable\controller\ManagerDashboardController$1.class
@@ -43,7 +37,6 @@ com\doable\controller\ManagerDashboardController$CategoryRow.class
 com\doable\controller\ManagerDashboardController$TaskRow.class
 com\doable\model\Category.class
 com\doable\controller\SettingsController.class
-com\doable\dao\EmployeeUserDao.class
 com\doable\controller\AdminDashboardController$2.class
 com\doable\controller\AdminDashboardController.class
 com\doable\controller\SettingsController$1.class
